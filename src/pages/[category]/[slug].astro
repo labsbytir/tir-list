@@ -2,7 +2,7 @@
 import Site from "../../layouts/Site.astro";
 import ActivityHeatmap from "../../components/ActivityHeatmap.astro";
 import Discussion from "../../components/Comments.tsx";
-import Listing from "../../components/Listing.tsx";
+import Listing, { resolveAlternatives } from "../../components/Listing.tsx";
 import { StarsHistory, UsageHistory, ViewsHistory } from "../../components/RepoCharts.tsx";
 import { categories, labels } from "../../lib/catalog";
 
@@ -18,50 +18,14 @@ export async function getStaticPaths() {
 }
 
 const { entry, category } = Astro.props as { entry: any; category: string };
-const label = labels[category] || category;
+const label = category === "servers" ? "MCP Servers" : labels[category] || category;
 const s = entry.stats || {};
 const hasGraphs =
   (entry.statsHistory?.length || 0) > 1 ||
   (entry.views?.weeks?.length || 0) > 0 ||
   (entry.activity?.length || 0) > 0;
 
-const shared = new Set((entry.tags || []).filter((t: string) => t !== category));
-const similar = categories
-  .flatMap((c) => c.items.map((i) => ({ item: i, category: c.id })))
-  .filter(
-    (s) =>
-      s.item.slug !== entry.slug &&
-      (s.category === category || s.item.tags?.some((t: string) => shared.has(t)))
-  )
-  .slice(0, 4)
-  .map((s) => ({
-    href: `/${s.category}/${s.item.slug}`,
-    name: s.item.name,
-    description: s.item.description,
-    stars: s.item.stats?.stars as number | undefined,
-  }));
-
-const installs: { label: string; href?: string; copy?: string }[] = [];
-if (category === "servers") {
-  const remote = entry.links?.website && !/github\.com/.test(entry.links.website) ? entry.links.website : "";
-  const config = remote ? { url: remote } : { command: "npx", args: ["-y", entry.slug] };
-  installs.push({
-    label: "Cursor",
-    href: `cursor://anysphere.cursor-deeplink/mcp/install?name=${encodeURIComponent(entry.slug)}&config=${encodeURIComponent(btoa(JSON.stringify(config)))}`,
-  });
-  installs.push({
-    label: "VS Code",
-    href: `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name: entry.slug, ...config }))}`,
-  });
-  if (remote) {
-    installs.push({
-      label: "Claude",
-      href: `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=${encodeURIComponent(entry.name)}&connectorUrl=${encodeURIComponent(remote)}`,
-    });
-  }
-} else if (category === "skills" && entry.repo) {
-  installs.push({ label: "Any agent", copy: `npx skills add ${entry.repo}` });
-}
+const similar = resolveAlternatives(entry, category, categories);
 ---
 
 <Site
@@ -78,6 +42,8 @@ if (category === "servers") {
   </nav>
   <Listing
     client:load
+    entry={entry}
+    category={category}
     name={entry.name}
     owner={entry.repo?.split("/")[0]}
     description={entry.description}
@@ -96,47 +62,15 @@ if (category === "servers") {
     pricingSource={entry.sources?.website}
     builtWith={entry.builtWith || []}
     similar={similar}
-    installs={installs}
-  />
-
-  {entry.install ? (
-    <div class="side-card" style="margin-bottom:1.5rem">
-      <header>{entry.install.label}</header>
-      <div class="body">
-        <pre class="cmd">{entry.install.command}</pre>
-        <button class="btn-copy" data-copy={entry.install.command}>Copy command</button>
-      </div>
-    </div>
-  ) : null}
-
-  <div class="layout">
-    <div>
-      {hasGraphs ? (
+  >
+    <Fragment slot="modelFacts">
+      {category === "models" && entry.specs ? (
         <section class="block">
-          <h2>Activity</h2>
-          {(entry.statsHistory?.length || 0) > 1 ? (
-            <>
-              <h3 style="font-size:0.85rem;color:var(--muted)">Stars over time</h3>
-              <StarsHistory client:load data={entry.statsHistory} />
-            </>
-          ) : null}
-          {(entry.views?.weeks?.length || 0) > 0 ? (
-            <>
-              <h3 style="font-size:0.85rem;color:var(--muted)">Views per week</h3>
-              <ViewsHistory client:load data={entry.views.weeks} />
-            </>
-          ) : null}
-          {entry.activity?.length ? <ActivityHeatmap activity={entry.activity} /> : null}
-        </section>
-      ) : null}
-
-      {entry.specs ? (
-        <section class="block">
-          <h2>Specs</h2>
+          <h3>Model details</h3>
           <div class="release">
             {entry.specs.modalities ? <p>Modalities: {entry.specs.modalities}</p> : null}
-            {entry.specs.contextLength ? <p>Context: <strong>{Number(entry.specs.contextLength).toLocaleString()}</strong> tokens</p> : null}
-            {entry.specs.maxOutput ? <p>Max output: <strong>{Number(entry.specs.maxOutput).toLocaleString()}</strong> tokens</p> : null}
+             {entry.specs.contextLength != null ? <p>Context: <strong>{Number(entry.specs.contextLength).toLocaleString()}</strong> tokens</p> : null}
+             {entry.specs.maxOutput != null ? <p>Max output: <strong>{Number(entry.specs.maxOutput).toLocaleString()}</strong> tokens</p> : null}
             {entry.specs.pricingPrompt ? <p>Pricing: <strong>${entry.specs.pricingPrompt}</strong> / prompt 1M · <strong>${entry.specs.pricingCompletion}</strong> / completion 1M</p> : null}
             {entry.specs.releasedAt ? <p>Released: {entry.specs.releasedAt}</p> : null}
             {entry.specs.knowledgeCutoff ? <p>Knowledge cutoff: {entry.specs.knowledgeCutoff}</p> : null}
@@ -148,9 +82,9 @@ if (category === "servers") {
         </section>
       ) : null}
 
-      {entry.specs ? (
+      {category === "models" && entry.specs ? (
       <section class="block">
-        <h2>FAQ</h2>
+        <h3>FAQ</h3>
         {entry.specs?.contextLength ? (
           <details class="release">
             <summary>What is the context length?</summary>
@@ -172,6 +106,26 @@ if (category === "servers") {
       </section>
       ) : null}
 
+    </Fragment>
+    <Fragment slot="activity">
+      {hasGraphs ? (
+        <section class="block">
+          <h3>Activity</h3>
+          {(entry.statsHistory?.length || 0) > 1 ? (
+            <>
+              <h4>GitHub stars over time</h4>
+              <StarsHistory client:load data={entry.statsHistory} />
+            </>
+          ) : null}
+          {(entry.views?.weeks?.length || 0) > 0 ? (
+            <>
+              <h4>Directory views per week</h4>
+              <ViewsHistory client:load data={entry.views.weeks} />
+            </>
+          ) : null}
+          {entry.activity?.length ? <ActivityHeatmap activity={entry.activity} /> : null}
+        </section>
+      ) : null}
       {(() => {
         const vendor = (entry.permaslug || "").split("/")[0];
         const siblings = vendor
@@ -215,7 +169,7 @@ if (category === "servers") {
               <p>Win rate {d.win_rate}% over {d.tournament_stats?.total ?? "?"} matches</p>
             </div>
           ))}
-          <p style="font-size:0.75rem;color:var(--muted)">Source: OpenRouter (openrouter.ai/rankings). Artificial Analysis scores via artificialanalysis.ai — attribute on republish.</p>
+          <p style="font-size:0.75rem;color:var(--muted)">Legacy benchmark data: measurement date, target version, or methodology may be missing. Not verified. Source: OpenRouter (openrouter.ai/rankings). Artificial Analysis scores via artificialanalysis.ai — attribute on republish.</p>
         </section>
       ) : null}
 
@@ -251,6 +205,10 @@ if (category === "servers") {
         </section>
       ) : null}
 
+    </Fragment>
+  </Listing>
+  <div class="layout">
+    <div>
       <section class="block">
         <h2>Discussion</h2>
         <Discussion client:visible page={`${category}/${entry.slug}`} />
