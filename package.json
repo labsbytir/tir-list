@@ -17,7 +17,7 @@
     "collect:health": "node collector/health.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.4.8",
+    "@astrojs/node": "^11.1.13",
     "@astrojs/react": "^7.1.9",
     "@electric-sql/pglite": "^0.5.16",
     "@electric-sql/pglite-pgvector": "^0.0.17",
