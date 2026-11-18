@@ -19,14 +19,44 @@
       "limit": 20
     },
     {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/Hannibal046/Awesome-LLM/main/README.md",
+      "category": "models",
+      "limit": 30
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/Shubhamsaboo/awesome-llm-apps/main/README.md",
+      "category": "agents",
+      "limit": 30
+    },
+    {
       "type": "github-topic",
       "topic": "cli",
       "category": "tools",
       "limit": 20
     },
     {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/agarrharr/awesome-cli-apps/master/README.md",
+      "category": "tools",
+      "limit": 30
+    },
+    {
       "type": "github-topic",
       "topic": "distroless",
+      "category": "containers",
+      "limit": 20
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/veggiemonk/awesome-docker/master/README.md",
+      "category": "containers",
+      "limit": 30
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/Friz-zy/awesome-linux-containers/master/README.md",
       "category": "containers",
       "limit": 20
     },
@@ -37,10 +67,28 @@
       "limit": 30
     },
     {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/master/README.md",
+      "category": "skills",
+      "limit": 30
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/sickn33/agentic-awesome-skills/main/README.md",
+      "category": "skills",
+      "limit": 30
+    },
+    {
       "type": "awesome-punkpeye",
       "url": "https://raw.githubusercontent.com/punkpeye/awesome-mcp-servers/main/README.md",
       "category": "servers",
       "limit": 60
+    },
+    {
+      "type": "awesome-punkpeye",
+      "url": "https://raw.githubusercontent.com/punkpeye/awesome-remote-mcp-servers/main/README.md",
+      "category": "servers",
+      "limit": 40
     },
     {
       "type": "openrouter-models",
