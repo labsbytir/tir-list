@@ -71,3 +71,15 @@ See `.env.example`: `BOSBASE_URL`, `BOSBASE_API_KEY`, `PGLITE_DIR`, `PORT`.
 
 - Comments (fuma-comment UI + Bosbase auth adapter) land once the Bosbase auth endpoint is confirmed; `roles`/`comments`/`rates` tables already exist in PGlite.
 - Bosbase itself installs wherever its own docs say; nothing on the repo side needs Docker.
+
+## Cloudflare cache checklist
+
+Code side is done in `src/middleware.ts` (HTML + server-island Cache-Control). The rest are zone settings:
+
+- Caching level: Standard; Browser TTL: Respect Existing Headers; Edge TTL: honor origin (`s-maxage`) — https://developers.cloudflare.com/cache/how-to/set-caching-levels/ , https://developers.cloudflare.com/cache/how-to/edge-browser-cache-ttl/
+- Always Online: on (serves the prerendered shell when origin drops) — https://developers.cloudflare.com/cache/how-to/always-online/
+- Cache keys: default; include query string on `/_server-islands/*` (props travel in the URL) — https://developers.cloudflare.com/cache/how-to/cache-keys/
+- **Crawler Hints: ON (must)** — Caching → Crawler Hints, or API: `PATCH /zones/{zone}/cache/crawler_hints` — https://developers.cloudflare.com/cache/advanced-configuration/crawler-hints/
+- Early Hints / Smart Hints: on — https://developers.cloudflare.com/cache/advanced-configuration/early-hints/
+- Security: Cache Deception Armor on; never cache `/api/*` with auth (middleware only touches GET HTML/islands, no cookies inspected) — https://developers.cloudflare.com/cache/cache-security/avoid-web-poisoning/ , https://developers.cloudflare.com/cache/cache-security/cache-deception-armor/ , https://developers.cloudflare.com/cache/cache-security/cors/
+- Purge on deploy: Purge Everything (or by prefix `/`, `/_server-islands/*`) after each deploy since island URLs embed a per-build encryption key — https://developers.cloudflare.com/cache/guides/invalidate-cache/
