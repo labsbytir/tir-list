@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import { ThemeProvider } from "@mui/material/styles";
+import { Box } from "@mui/material";
 import {
   Bar,
   BarChart,
@@ -9,6 +12,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { theme } from "./theme";
+
+function Frame({ children }: { children: ReactNode }) {
+  return (
+    <ThemeProvider theme={theme}>
+      <Box sx={{ width: "100%", height: 220 }}>{children}</Box>
+    </ThemeProvider>
+  );
+}
 
 export interface StarsPoint {
   date: string;
@@ -18,7 +30,7 @@ export interface StarsPoint {
 export function StarsHistory({ data }: { data: StarsPoint[] }) {
   if (!data || data.length === 0) return null;
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <Frame><ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>
         <CartesianGrid stroke="#04471c" strokeDasharray="3 3" />
         <XAxis
@@ -46,7 +58,7 @@ export function StarsHistory({ data }: { data: StarsPoint[] }) {
           dot={false}
         />
       </LineChart>
-    </ResponsiveContainer>
+    </ResponsiveContainer></Frame>
   );
 }
 
@@ -59,7 +71,7 @@ export interface ViewsPoint {
 export function ViewsHistory({ data }: { data: ViewsPoint[] }) {
   if (!data || data.length === 0) return null;
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <Frame><ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}>
         <CartesianGrid stroke="#04471c" strokeDasharray="3 3" />
         <XAxis
@@ -82,7 +94,7 @@ export function ViewsHistory({ data }: { data: ViewsPoint[] }) {
         <Bar dataKey="count" fill="#058c42" />
         <Bar dataKey="uniques" fill="#16db65" />
       </BarChart>
-    </ResponsiveContainer>
+    </ResponsiveContainer></Frame>
   );
 }
 
@@ -94,7 +106,7 @@ export interface UsagePoint {
 export function UsageHistory({ data }: { data: UsagePoint[] }) {
   if (!data || data.length === 0) return null;
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <Frame><ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}>
         <CartesianGrid stroke="#04471c" strokeDasharray="3 3" />
         <XAxis
@@ -123,6 +135,6 @@ export function UsageHistory({ data }: { data: UsagePoint[] }) {
         />
         <Bar dataKey="tokens" fill="#058c42" />
       </BarChart>
-    </ResponsiveContainer>
+    </ResponsiveContainer></Frame>
   );
 }

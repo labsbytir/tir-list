@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
+import { theme } from "./theme";
 import {
   Box,
   Button,
@@ -18,12 +19,6 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-
-const theme = createTheme({
-  palette: { mode: "dark", primary: { main: "#16db65" }, background: { default: "#020202", paper: "#0d2818" } },
-  typography: { fontFamily: "system-ui, sans-serif", h4: { fontFamily: "ui-monospace, monospace" } },
-  shape: { borderRadius: 8 },
-});
 
 type Fact = { text: string; open: number; closed: number };
 type Sibling = { href: string; name: string; description: string; stars?: number };
