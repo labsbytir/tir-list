@@ -19,20 +19,16 @@ const { categories } = Astro.props as { categories: Category[] };
 {
   categories.flatMap((c) =>
     c.items.map((item) => (
-      <article
-        class="card"
-        data-cat={c.id}
-        data-key={`${c.id}:${item.slug}`}
-      >
-        <h3>
+      <article class="card" data-cat={c.id} data-key={`${c.id}:${item.slug}`}>
+        <h3 class="card-title">
           <a href={item.url}>{item.name}</a>
         </h3>
-        <p>{item.description}</p>
-        <p>
-          {item.tags.map((t) => (
-            <span class="tag">#{t}</span>
-          ))}
-        </p>
+        <p class="card-tags">{item.tags.map((t) => `#${t}`).join(" ")}</p>
+        <p class="card-desc">{item.description}</p>
+        <div class="card-meta">
+          <span>{c.label}</span>
+          <a href={item.url}>Visit →</a>
+        </div>
       </article>
     )),
   )
