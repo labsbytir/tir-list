@@ -32,11 +32,12 @@ function proxyUrlFor(session) {
   ).toString();
 }
 
-async function fetchText(url, session) {
+async function fetchText(url, session, extraHeaders = {}) {
   const proxy = proxyUrlFor(session);
   const headers = {
     "user-agent": UA,
     accept: "application/vnd.github+json, text/markdown, */*",
+    ...extraHeaders,
   };
   if (process.env.GITHUB_TOKEN)
     headers.authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
@@ -94,7 +95,124 @@ export function parseGithubTopic(json, limit) {
   });
 }
 
+export function cleanDescription(s, limit = 300) {
+  return String(s || "")
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_`#]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, limit);
+}
+
+export function parseOpenRouterModels(json, limit, exclude = [":batch"]) {
+  return (json.data || [])
+    .filter((m) => !exclude.some((x) => m.id.includes(x)))
+    .slice(0, limit)
+    .map((m) => ({
+      slug: slugify(m.id),
+      name: m.name,
+      description: cleanDescription(m.description),
+      url: `https://openrouter.ai/${m.id}`,
+      tags: [
+        "models",
+        ...new Set(
+          String(m.architecture?.modality || "")
+            .split(/[^a-z]+/i)
+            .filter(Boolean)
+            .slice(0, 3)
+        ),
+      ],
+      links: { website: `https://openrouter.ai/${m.id}` },
+      permaslug: m.id,
+      specs: {
+        contextLength: m.context_length,
+        pricingPrompt: m.pricing?.prompt,
+        pricingCompletion: m.pricing?.completion,
+        modalities: m.architecture?.modality,
+      },
+      benchmarks: m.benchmarks || null,
+    }));
+}
+
+export function parseOpenRouterApps(html, limit) {
+  const out = [];
+  const seen = new Set();
+  const listMatch = html.match(/"itemListElement":\[(.*?)\]\s*}<\/script>/s);
+  if (!listMatch) return out;
+  const itemRe =
+    /\{"@type":"ListItem","position":\d+,"name":"((?:[^"\\]|\\.)+)","item":"((?:[^"\\]|\\.)+)"\}/g;
+  let m;
+  while ((m = itemRe.exec(listMatch[1])) && out.length < limit) {
+    const name = m[1].replace(/\\u0026/g, "&");
+    const itemUrl = m[2];
+    let url = itemUrl.startsWith("http")
+      ? itemUrl
+      : `https://openrouter.ai${itemUrl}`;
+    const enc = itemUrl.match(/(?:^|\/)apps\/url\/(.+)$/);
+    if (enc) {
+      try {
+        url = decodeURIComponent(enc[1]);
+      } catch {
+        url = `https://openrouter.ai${itemUrl}`;
+      }
+    }
+    const slug = slugify(name);
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    const esc = itemUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const card = html.match(new RegExp(`href="${esc}"([\\s\\S]{0,3000}?)</a>`));
+    const body = card ? card[1] : "";
+    const desc =
+      (body.match(/line-clamp-2[^>]*>([^<]{10,400})</) || [])[1] || "";
+    const tokens =
+      (body.match(/([\d.]+[KMBT])<!-- --> <!-- -->tokens/) || [])[1] || null;
+    const entry = {
+      slug,
+      name,
+      description: desc.replace(/&#x27;/g, "'").trim(),
+      url,
+      tags: ["tools", "openrouter"],
+      links: {
+        website: url.startsWith("https://openrouter.ai/apps") ? url : undefined,
+      },
+      stats: tokens ? { tokens } : undefined,
+    };
+    if (!entry.links.website) delete entry.links;
+    if (!entry.stats) delete entry.stats;
+    out.push(entry);
+  }
+  return out;
+}
+
 async function collectSource(src) {
+  const orHeaders = process.env.OPENROUTER_API_KEY
+    ? { authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` }
+    : {};
+  if (src.type === "openrouter-models") {
+    const data = JSON.parse(
+      await fetchText(
+        "https://openrouter.ai/api/v1/models",
+        "openrouter-models",
+        orHeaders
+      )
+    );
+    return parseOpenRouterModels(data, src.limit, src.exclude).map((e) => ({
+      ...e,
+      tags: [src.category, ...e.tags.slice(1)],
+    }));
+  }
+  if (src.type === "openrouter-apps") {
+    const html = await fetchText(
+      "https://openrouter.ai/apps",
+      "openrouter-apps",
+      orHeaders
+    );
+    return parseOpenRouterApps(html, src.limit).map((e) => ({
+      ...e,
+      tags: [src.category, ...e.tags.slice(1)],
+    }));
+  }
   if (src.type === "github-topic") {
     const url =
       `https://api.github.com/search/repositories?q=topic:${encodeURIComponent(src.topic)}` +
@@ -135,7 +253,7 @@ async function main() {
     }
     if (DRY_RUN) {
       console.log(
-        `would fetch: ${src.type} ${src.topic || src.url} -> catalog/${src.category}/`
+        `would fetch: ${src.type} ${src.topic || src.url || `limit=${src.limit}`} -> catalog/${src.category}/`
       );
       planned++;
       continue;

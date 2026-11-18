@@ -73,6 +73,15 @@ for (const [category, entries] of perCategory) {
             `license: ${e.stats.license || "unknown"}`,
           ]
         : []),
+      ...(e.specs
+        ? [
+            `context: ${e.specs.contextLength}`,
+            `pricing: ${e.specs.pricingPrompt}/${e.specs.pricingCompletion}`,
+          ]
+        : []),
+      ...(e.permaslug
+        ? [`openrouter: https://openrouter.ai/${e.permaslug}`]
+        : []),
       ...(e.releases?.length
         ? [
             "",

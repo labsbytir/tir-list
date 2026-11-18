@@ -40,3 +40,4 @@ Maintainers refresh GitHub stats with `npm run collect:enrich` (needs `WEBSHARE_
 - One entry per PR keeps review fast.
 - `url` must be `http(s)` and point at the tool's home, not an affiliate or redirect link.
 - No duplicates: search the catalog first.
+- Collector-managed fields (`repo`, `stats`, `statsHistory`, `releases`, `changelog`, `activity`, `views`, `permaslug`, `specs`, `benchmarks`, `usageHistory`) are filled by `npm run collect` / `npm run collect:enrich` — don't hand-edit them.

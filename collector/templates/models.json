@@ -14,5 +14,14 @@
   "install": {
     "label": "Package manager",
     "command": "<install-command>"
-  }
+  },
+  "permaslug": "vendor/model-id",
+  "specs": {
+    "contextLength": 200000,
+    "pricingPrompt": "0.000003",
+    "pricingCompletion": "0.000015",
+    "modalities": "text->text"
+  },
+  "benchmarks": null,
+  "usageHistory": []
 }

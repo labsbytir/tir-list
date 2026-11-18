@@ -180,17 +180,69 @@ function loadEntries() {
   return out;
 }
 
+async function enrichOpenRouterUsage(items) {
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.warn("OPENROUTER_API_KEY not set, skipping usage history.");
+    return 0;
+  }
+  const key = process.env.OPENROUTER_API_KEY;
+  const res = await undiciFetch(
+    "https://openrouter.ai/api/v1/datasets/rankings-daily?period=week",
+    {
+      headers: {
+        "user-agent": UA,
+        authorization: `Bearer ${key}`,
+      },
+      dispatcher: proxyUrlFor("openrouter-usage")
+        ? new ProxyAgent(proxyUrlFor("openrouter-usage"))
+        : undefined,
+    }
+  );
+  if (!res.ok) throw new Error(`rankings-daily: HTTP ${res.status}`);
+  const { data } = await res.json();
+  const byModel = new Map();
+  for (const row of data || []) {
+    if (row.model_permaslug === "other") continue;
+    if (!byModel.has(row.model_permaslug)) byModel.set(row.model_permaslug, []);
+    byModel
+      .get(row.model_permaslug)
+      .push({ date: row.date, tokens: Number(row.total_tokens) });
+  }
+  let updated = 0;
+  for (const { entry, file } of items) {
+    if (!entry.permaslug) continue;
+    const rows = [...byModel.keys()]
+      .filter(
+        (k) => k === entry.permaslug || k.startsWith(entry.permaslug + ":")
+      )
+      .flatMap((k) => byModel.get(k));
+    if (!rows.length) continue;
+    const seen = new Map(rows.map((r) => [r.date, r.tokens]));
+    entry.usageHistory = [...seen.entries()]
+      .map(([date, tokens]) => ({ date, tokens }))
+      .sort((a, b) => (a.date < b.date ? -1 : 1))
+      .slice(-90);
+    writeFileSync(file, JSON.stringify(entry, null, 2) + "\n");
+    updated++;
+  }
+  return updated;
+}
+
 async function main() {
-  const items = loadEntries().filter(({ entry }) =>
+  const all = loadEntries();
+  const items = all.filter(({ entry }) =>
     parseRepoUrl(entry.links?.github || entry.url)
   );
+  const modelItems = all.filter(({ entry }) => entry.permaslug);
   if (DRY_RUN) {
     for (const { category, entry } of items) {
       console.log(
         `would enrich: ${category}/${entry.slug} (${parseRepoUrl(entry.links?.github || entry.url)})`
       );
     }
-    console.log(`dry run: ${items.length} repo-backed entries`);
+    console.log(
+      `dry run: ${items.length} repo-backed + ${modelItems.length} OpenRouter entries`
+    );
     return;
   }
   let updated = 0;
@@ -217,6 +269,12 @@ async function main() {
     await sleep(DELAY_MS);
   }
   console.log(`done: ${updated}/${items.length} enriched`);
+  try {
+    const usage = await enrichOpenRouterUsage(all);
+    console.log(`usage history: ${usage} models updated`);
+  } catch (err) {
+    console.error(`usage enrichment failed, continuing (${err.message})`);
+  }
   execFileSync("npm", ["run", "validate:data"], { stdio: "inherit" });
 }
 

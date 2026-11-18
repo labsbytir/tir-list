@@ -40,7 +40,11 @@ for (const category of readdirSync(root).sort()) {
     if (typeof e?.url === "string" && !/^https?:\/\//.test(e.url))
       fail(`${where}: "url" must start with http(s)`);
     if (e?.install !== undefined) {
-      if (typeof e.install !== "object" || e.install === null || Array.isArray(e.install)) {
+      if (
+        typeof e.install !== "object" ||
+        e.install === null ||
+        Array.isArray(e.install)
+      ) {
         fail(`${where}: "install" must be an object`);
       } else {
         for (const k of ["label", "command"]) {
@@ -67,12 +71,27 @@ for (const category of readdirSync(root).sort()) {
     }
     if (e?.repo !== undefined && !/^[^/\s]+\/[^/\s]+$/.test(e.repo))
       fail(`${where}: "repo" must look like "owner/name"`);
+    if (
+      e?.permaslug !== undefined &&
+      (typeof e.permaslug !== "string" || !e.permaslug.trim())
+    )
+      fail(`${where}: "permaslug" must be a non-empty string`);
+    for (const k of ["specs", "benchmarks"]) {
+      if (e?.[k] !== undefined && e[k] !== null && typeof e[k] !== "object")
+        fail(`${where}: "${k}" must be an object or null`);
+    }
+    if (e?.usageHistory !== undefined) {
+      if (!Array.isArray(e.usageHistory))
+        fail(`${where}: "usageHistory" must be an array`);
+      else if (e.usageHistory.length > 90)
+        fail(`${where}: "usageHistory" capped at 90 points`);
+    }
     if (e?.stats !== undefined) {
       for (const k of ["stars", "forks", "watchers", "openIssues"]) {
         if (e.stats[k] !== undefined && typeof e.stats[k] !== "number")
           fail(`${where}: stats.${k} must be a number`);
       }
-      for (const k of ["license", "pushedAt", "fetchedAt"]) {
+      for (const k of ["license", "pushedAt", "fetchedAt", "tokens"]) {
         if (e.stats[k] !== undefined && typeof e.stats[k] !== "string")
           fail(`${where}: stats.${k} must be a string`);
       }

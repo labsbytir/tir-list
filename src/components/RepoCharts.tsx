@@ -85,3 +85,44 @@ export function ViewsHistory({ data }: { data: ViewsPoint[] }) {
     </ResponsiveContainer>
   );
 }
+
+export interface UsagePoint {
+  date: string;
+  tokens: number;
+}
+
+export function UsageHistory({ data }: { data: UsagePoint[] }) {
+  if (!data || data.length === 0) return null;
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data}>
+        <CartesianGrid stroke="#04471c" strokeDasharray="3 3" />
+        <XAxis
+          dataKey="date"
+          tick={{ fill: "#16db65", fontSize: 11 }}
+          minTickGap={40}
+        />
+        <YAxis
+          tick={{ fill: "#16db65", fontSize: 11 }}
+          allowDecimals={false}
+          width={60}
+          tickFormatter={(v: number) =>
+            v >= 1e9
+              ? `${(v / 1e9).toFixed(1)}B`
+              : v >= 1e6
+                ? `${(v / 1e6).toFixed(0)}M`
+                : `${v}`
+          }
+        />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "#020202",
+            border: "1px solid #058c42",
+          }}
+          labelStyle={{ color: "#16db65" }}
+        />
+        <Bar dataKey="tokens" fill="#058c42" />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}

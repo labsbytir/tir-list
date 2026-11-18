@@ -41,6 +41,17 @@
       "url": "https://raw.githubusercontent.com/punkpeye/awesome-mcp-servers/main/README.md",
       "category": "servers",
       "limit": 30
+    },
+    {
+      "type": "openrouter-models",
+      "category": "models",
+      "limit": 40,
+      "exclude": [":batch"]
+    },
+    {
+      "type": "openrouter-apps",
+      "category": "tools",
+      "limit": 30
     }
   ]
 }

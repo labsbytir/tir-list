@@ -34,7 +34,7 @@ const { categories } = Astro.props as { categories: Category[] };
         <p class="card-tags">{item.tags.map((t) => `#${t}`).join(" ")}</p>
         <p class="card-desc">{item.description}</p>
         <div class="card-meta">
-          <span>{c.label}</span>
+          <span>{c.label}{item.stats?.tokens ? ` · ${item.stats.tokens} tokens` : ""}</span>
           <span class="card-links">
             <a href={item.url}>Visit →</a>
             {item.links?.github && item.links.github !== item.url ? <a href={item.links.github}>GitHub</a> : null}

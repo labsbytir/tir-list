@@ -2,7 +2,7 @@
 import Site from "../../layouts/Site.astro";
 import ActivityHeatmap from "../../components/ActivityHeatmap.astro";
 import Discussion from "../../components/Comments.tsx";
-import { StarsHistory, ViewsHistory } from "../../components/RepoCharts.tsx";
+import { StarsHistory, UsageHistory, ViewsHistory } from "../../components/RepoCharts.tsx";
 import { categories, labels } from "../../lib/catalog";
 
 export const prerender = true;
@@ -40,6 +40,7 @@ const hasGraphs =
     {s.stars !== undefined ? <span>★ <strong>{s.stars.toLocaleString()}</strong> stars</span> : null}
     {s.forks !== undefined ? <span><strong>{s.forks.toLocaleString()}</strong> forks</span> : null}
     {s.license ? <span>{s.license}</span> : null}
+    {s.tokens ? <span><strong>{s.tokens}</strong> tokens on OpenRouter</span> : null}
     {entry.releases?.length ? <span>{entry.releases.length} releases tracked</span> : null}
   </div>
 
@@ -85,6 +86,49 @@ const hasGraphs =
             </>
           ) : null}
           {entry.activity?.length ? <ActivityHeatmap activity={entry.activity} /> : null}
+        </section>
+      ) : null}
+
+      {entry.specs ? (
+        <section class="block">
+          <h2>Specs</h2>
+          <div class="release">
+            {entry.specs.contextLength ? <p>Context: <strong>{Number(entry.specs.contextLength).toLocaleString()}</strong> tokens</p> : null}
+            {entry.specs.pricingPrompt ? <p>Pricing: <strong>${entry.specs.pricingPrompt}</strong> / prompt 1M · <strong>${entry.specs.pricingCompletion}</strong> / completion 1M</p> : null}
+            {entry.specs.modalities ? <p>Modalities: {entry.specs.modalities}</p> : null}
+          </div>
+        </section>
+      ) : null}
+
+      {entry.benchmarks?.artificial_analysis || entry.benchmarks?.design_arena?.length ? (
+        <section class="block">
+          <h2>Benchmarks</h2>
+          {entry.benchmarks.artificial_analysis ? (
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">
+              {Object.entries(entry.benchmarks.artificial_analysis)
+                .filter(([, v]) => typeof v === "number")
+                .sort((a, b) => (b[1] as number) - (a[1] as number))
+                .map(([k, v]) => (
+                  <tr><th style="text-align:left;color:var(--muted);padding:0.3rem 0.5rem;border-bottom:1px solid var(--black-forest)">{k.replace(/_/g, " ")}</th><td style="text-align:right">{v}</td></tr>
+                ))}
+            </table>
+          ) : null}
+          {(entry.benchmarks.design_arena || []).slice(0, 8).map((d: any) => (
+            <div class="release">
+              <h3>{d.category} · ELO {d.elo} (#{d.rank})</h3>
+              <p>Win rate {d.win_rate}% over {d.tournament_stats?.total ?? "?"} matches</p>
+            </div>
+          ))}
+          <p style="font-size:0.75rem;color:var(--muted)">Source: OpenRouter (openrouter.ai/rankings). Artificial Analysis scores via artificialanalysis.ai — attribute on republish.</p>
+        </section>
+      ) : null}
+
+      {(entry.usageHistory?.length || 0) > 1 ? (
+        <section class="block">
+          <h2>Usage</h2>
+          <h3 style="font-size:0.85rem;color:var(--muted)">Tokens per week on OpenRouter</h3>
+          <UsageHistory client:load data={entry.usageHistory.map((u: any) => ({ date: u.date, tokens: u.tokens }))} />
+          <p style="font-size:0.75rem;color:var(--muted)">Source: OpenRouter (openrouter.ai/rankings), CC BY 4.0.</p>
         </section>
       ) : null}
 
