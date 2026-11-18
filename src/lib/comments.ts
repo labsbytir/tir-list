@@ -100,21 +100,20 @@ async function toComment(
   };
 }
 
-// Auth seam: anonymous-first. The API wrapper sets a stable `tir_anon`
-// cookie; getSession reads it. Bosbase sign-in stays as the upgrade path.
-function anonIdFrom(req: {
-  headers: Map<string, string | readonly string[]>;
-}): string | null {
-  const raw = req.headers.get("cookie");
-  const cookie = Array.isArray(raw) ? raw.join(";") : raw || "";
-  const m = cookie.match(/(?:^|;\s*)tir_anon=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
+import { userFromRequest } from "./auth.ts";
+
+function asRequest(req: { headers: Map<string, string | readonly string[]> }): Request {
+  const headers = new Headers();
+  req.headers.forEach((value, key) => {
+    headers.set(key, Array.isArray(value) ? value.join(", ") : value);
+  });
+  return new Request("http://local/", { headers });
 }
 
 export const commentsAuth = {
-  getSession: (req: { headers: Map<string, string | readonly string[]> }) => {
-    const id = anonIdFrom(req);
-    return id ? { id } : null;
+  getSession: async (req: { headers: Map<string, string | readonly string[]> }) => {
+    const user = await userFromRequest(asRequest(req));
+    return user ? { id: user.id, name: user.firstName || user.email } : null;
   },
   getSessionWithRole: () => null,
 };

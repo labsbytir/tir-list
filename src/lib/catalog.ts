@@ -45,6 +45,17 @@ export interface Entry {
   specs?: ModelSpecs;
   benchmarks?: Record<string, unknown> | null;
   usageHistory?: { date: string; tokens: number }[];
+  about?: string;
+  features?: string[];
+  highlights?: string[];
+  pricing?: { plan: string; price: string }[];
+  builtWith?: { kind: string; name: string }[];
+  verdict?: {
+    strengths: { text: string; open: number; closed: number }[];
+    tradeoffs: { text: string; open: number; closed: number }[];
+    sampled?: number;
+  };
+  sources?: { website?: string; pricing?: string };
 }
 
 export interface Category {

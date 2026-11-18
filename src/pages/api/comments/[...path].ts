@@ -23,15 +23,7 @@ function getApp(): Hono {
 
 const handler: APIRoute = async ({ request }) => {
   const res = await getApp().fetch(request);
-  const out = new Response(res.body, res);
-  if (!/(?:^|;\s*)tir_anon=/.test(request.headers.get("cookie") || "")) {
-    const id = `anon-${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
-    out.headers.append(
-      "set-cookie",
-      `tir_anon=${id}; Path=/; Max-Age=31536000; SameSite=Lax`
-    );
-  }
-  return out;
+  return new Response(res.body, res);
 };
 export const GET = handler;
 export const POST = handler;

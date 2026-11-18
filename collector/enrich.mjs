@@ -79,6 +79,112 @@ const CHANGELOG_FILES = [
   "CHANGELOG.txt",
 ];
 
+const BUCKETS = {
+  docs: ["doc", "readme", "tutorial", "example", "guide"],
+  bugs: ["bug", "crash", "error", "regression", "broken"],
+  performance: ["slow", "perf", "memory", "latency", "timeout"],
+  dx: ["install", "setup", "config", "onboarding"],
+  maintenance: ["stale", "unmaintained", "help wanted"],
+  security: ["security", "cve", "vulnerability"],
+};
+
+const LINES = {
+  docs: ["Issues about docs get closed.", "Docs issues stay open."],
+  bugs: ["Bug reports get resolved.", "Bug reports stay open."],
+  performance: ["Performance issues get fixed.", "Performance complaints stay open."],
+  dx: ["Install and setup issues get resolved.", "Install and setup issues stay open."],
+  maintenance: ["Maintenance requests get picked up.", "Repo is asking for help."],
+  security: ["Security reports get closed.", "Security reports are still open."],
+};
+
+export function scoreIssues(issues) {
+  const counts = {};
+  for (const key of Object.keys(BUCKETS)) counts[key] = { open: 0, closed: 0 };
+  for (const issue of issues) {
+    const text = `${issue.title || ""} ${(issue.labels || []).map((l) => l.name || l).join(" ")} ${(issue.body || "").slice(0, 500)}`.toLowerCase();
+    const side = issue.state === "open" ? "open" : "closed";
+    for (const [key, words] of Object.entries(BUCKETS)) {
+      if (words.some((w) => text.includes(w))) counts[key][side] += side === "open" ? 2 : 1;
+    }
+  }
+  const strengths = [];
+  const tradeoffs = [];
+  for (const [key, c] of Object.entries(counts)) {
+    if (c.open + c.closed < 3) continue;
+    if (c.closed >= c.open * 2)
+      strengths.push({ text: LINES[key][0], open: c.open, closed: c.closed });
+    else if (c.open >= c.closed * 2)
+      tradeoffs.push({ text: LINES[key][1], open: c.open, closed: c.closed });
+  }
+  return { strengths: strengths.slice(0, 3), tradeoffs: tradeoffs.slice(0, 3), sampled: issues.length };
+}
+
+const STACK = [
+  ["language", "Go", ["golang", '"go"', " go "]],
+  ["language", "Rust", ["rust", "cargo"]],
+  ["language", "Python", ["python", "django", "flask", "fastapi"]],
+  ["language", "TypeScript", ["typescript", " next", "astro"]],
+  ["language", "JavaScript", ["javascript", " node", "express"]],
+  ["framework", "React", ["react"]],
+  ["framework", "Next.js", ["next.js", "nextjs"]],
+  ["framework", "Astro", ["astro"]],
+  ["framework", "Django", ["django"]],
+  ["framework", "FastAPI", ["fastapi"]],
+  ["search", "FlexSearch", ["flexsearch"]],
+  ["search", "Meilisearch", ["meilisearch"]],
+  ["search", "Elasticsearch", ["elasticsearch"]],
+  ["web server", "Caddy", ["caddy"]],
+  ["web server", "nginx", ["nginx"]],
+  ["database", "Postgres", ["postgres", "postgresql"]],
+  ["database", "SQLite", ["sqlite"]],
+  ["database", "Redis", ["redis", "valkey"]],
+];
+
+export function detectStack(text) {
+  const hay = ` ${String(text || "").toLowerCase()} `;
+  const seen = new Set();
+  const out = [];
+  for (const [kind, name, needles] of STACK) {
+    if (seen.has(name)) continue;
+    if (needles.some((n) => hay.includes(n))) {
+      seen.add(name);
+      out.push({ kind, name });
+    }
+  }
+  return out;
+}
+
+function stripTags(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function parseSite(html) {
+  const features = [];
+  const heading = html.match(/<h[1-3][^>]*>[^<]*features?[^<]*<\/h[1-3]>([\s\S]{0,4000})/i);
+  const block = heading ? heading[1] : html;
+  for (const m of block.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)) {
+    const line = stripTags(m[1]);
+    if (line.length > 12 && line.length <= 140) features.push(line);
+    if (features.length >= 6) break;
+  }
+  const pricing = [];
+  for (const m of html.matchAll(/(\$\s?\d[\d,]*(?:\.\d+)?\s?(?:\/\s?(?:mo|month|yr|year|user))?|free|custom)/gi)) {
+    const price = m[1].replace(/\s+/g, " ").trim();
+    if (pricing.some((p) => p.price.toLowerCase() === price.toLowerCase())) continue;
+    pricing.push({ plan: pricing.length ? `Plan ${pricing.length + 1}` : "Plan", price });
+    if (pricing.length >= 4) break;
+  }
+  const desc = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
+  return { features, pricing, about: desc ? stripTags(desc[1]).slice(0, 400) : "" };
+}
+
 async function enrichRepo(repo, session) {
   const { json: r } = await ghFetch(
     `https://api.github.com/repos/${repo}`,
@@ -168,7 +274,47 @@ async function enrichRepo(repo, session) {
   } catch {
     views = null;
   }
-  return { stats, releases, changelog, activity, views };
+  let verdict = null;
+  try {
+    const issues = await ghFetch(
+      `https://api.github.com/repos/${repo}/issues?state=all&per_page=100`,
+      session
+    );
+    if (issues.json) {
+      const only = issues.json.filter((i) => !i.pull_request);
+      const scored = scoreIssues(only);
+      if (scored.strengths.length || scored.tradeoffs.length) verdict = scored;
+    }
+  } catch {
+    verdict = null;
+  }
+  let builtWith = [];
+  try {
+    const lang = await ghFetch(`https://api.github.com/repos/${repo}/languages`, session);
+    if (lang.json) {
+      builtWith = Object.keys(lang.json)
+        .slice(0, 4)
+        .map((name) => ({ kind: "language", name }));
+    }
+  } catch {
+    builtWith = [];
+  }
+  try {
+    const readme = await ghFetch(
+      `https://raw.githubusercontent.com/${repo}/${branch}/README.md`,
+      session,
+      { raw: true }
+    );
+    if (readme.text) {
+      const known = new Set(builtWith.map((b) => b.name));
+      for (const item of detectStack(readme.text)) {
+        if (!known.has(item.name)) builtWith.push(item);
+      }
+    }
+  } catch {
+    /* readme optional */
+  }
+  return { stats, releases, changelog, activity, views, verdict, builtWith };
 }
 
 function loadEntries() {
@@ -265,6 +411,23 @@ async function main() {
       if (data.changelog) entry.changelog = data.changelog;
       if (data.activity) entry.activity = data.activity;
       if (data.views) entry.views = data.views;
+      if (data.verdict) entry.verdict = data.verdict;
+      if (data.builtWith?.length) entry.builtWith = data.builtWith;
+      const site = entry.links?.website;
+      if (site && !/github\.com/.test(site)) {
+        try {
+          const page = await ghFetch(site, `site-${entry.slug}`, { raw: true });
+          if (page.text) {
+            const parsed = parseSite(page.text);
+            if (parsed.features.length) entry.features = parsed.features;
+            if (parsed.pricing.length) entry.pricing = parsed.pricing;
+            if (parsed.about && !entry.about) entry.about = parsed.about;
+            entry.sources = { ...(entry.sources || {}), website: site };
+          }
+        } catch (err) {
+          console.error(`site scrape skipped: ${site} (${err.message})`);
+        }
+      }
       const today = new Date().toISOString().slice(0, 10);
       const hist = Array.isArray(entry.statsHistory) ? entry.statsHistory : [];
       if (hist[hist.length - 1]?.date !== today)

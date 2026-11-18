@@ -214,6 +214,34 @@ export function parseAppRankings(html, limit) {
   return out;
 }
 
+export function parseSkillsSh(html, limit) {
+  const out = [];
+  const seen = new Set();
+  const rowRe = /<a[^>]*href="(\/[^"]+)"[^>]*>[\s\S]{0,600}?<h3[^>]*>([^<]+)<\/h3>[\s\S]{0,600}?<p[^>]*>([^<]+)<\/p>[\s\S]{0,4000}?aria-label="Weekly installs: ([\d,\s]+)"[\s\S]{0,4000}?>([\d.]+[KMBT])<\/span>/g;
+  let m;
+  while ((m = rowRe.exec(html)) && out.length < limit) {
+    const skill = m[2].trim();
+    const repo = m[3].trim();
+    const slug = slugify(skill);
+    if (seen.has(slug) || !/^[^/\s]+\/[^/\s]+$/.test(repo)) continue;
+    seen.add(slug);
+    const weekly = m[4].split(",").map((n) => Number(n.trim())).filter((n) => Number.isFinite(n));
+    out.push({
+      slug,
+      name: skill,
+      description: "",
+      url: `https://github.com/${repo}`,
+      links: { github: `https://github.com/${repo}` },
+      tags: ["skills"],
+      install: { label: "npx skills", command: `npx skills add ${repo}` },
+      stats: { installs: m[5] },
+      weeklyInstalls: weekly,
+      repo,
+    });
+  }
+  return out;
+}
+
 export function parsePunkpeyeAwesome(markdown, limit) {
   const LANG = {
     "🐍": "python",
@@ -333,6 +361,10 @@ async function collectSource(src) {
       tags: [src.category],
     }));
   }
+  if (src.type === "skills-sh") {
+    const html = await fetchText("https://www.skills.sh/", "skills-sh");
+    return parseSkillsSh(html, src.limit);
+  }
   if (src.type === "awesome-punkpeye") {
     const md = await fetchAwesome(src.url, `awesome-${slugify(src.url)}`);
     return parsePunkpeyeAwesome(md, src.limit).map((e) => {
@@ -382,8 +414,9 @@ async function main() {
   let planned = 0,
     written = 0,
     skipped = 0,
-    dupes = 0;
-  const known = new Set();
+    dupes = 0,
+    merged = 0;
+  const known = new Map();
   try {
     const { readdirSync, readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
@@ -392,13 +425,12 @@ async function main() {
       for (const file of readdirSync(join(root.pathname, category)).filter(
         (f) => f.endsWith(".json")
       )) {
+        const path = join(root.pathname, category, file);
         try {
           for (const u of entryUrls(
-            JSON.parse(
-              readFileSync(join(root.pathname, category, file), "utf8")
-            )
+            JSON.parse(readFileSync(path, "utf8"))
           )) {
-            known.add(u);
+            if (!known.has(u)) known.set(u, path);
           }
         } catch {
           continue;
@@ -426,10 +458,39 @@ async function main() {
       continue;
     }
     for (const e of entries) {
+      if (!e.description && e.repo) {
+        try {
+          const r = JSON.parse(await fetchText('https://api.github.com/repos/' + e.repo, 'repo-' + e.slug));
+          if (r.description) e.description = String(r.description).trim();
+          await sleep(300);
+        } catch {
+          continue;
+        }
+      }
       if (!e.description) continue;
       const keys = entryUrls(e);
-      if (keys.some((k) => known.has(k))) {
+      const hit = keys.map((k) => known.get(k)).find(Boolean);
+      if (hit) {
         dupes++;
+        try {
+          const cur = JSON.parse(readFileSync(hit, 'utf8'));
+          let changed = false;
+          for (const k of ['description', 'install']) {
+            if (!cur[k] && e[k]) { cur[k] = e[k]; changed = true; }
+          }
+          cur.links = cur.links || {};
+          for (const kv of Object.entries(e.links || {})) {
+            if (!cur.links[kv[0]] && kv[1]) { cur.links[kv[0]] = kv[1]; changed = true; }
+          }
+          cur.stats = cur.stats || {};
+          for (const k of ['installs', 'tokens']) {
+            if (!cur.stats[k] && e.stats && e.stats[k]) { cur.stats[k] = e.stats[k]; changed = true; }
+          }
+          if (!cur.weeklyInstalls && e.weeklyInstalls) { cur.weeklyInstalls = e.weeklyInstalls; changed = true; }
+          if (changed) { writeFileSync(hit, JSON.stringify(cur, null, 2) + chr(10)); merged++; }
+        } catch {
+          continue;
+        }
         continue;
       }
       const dir = new URL(`../catalog/${src.category}/`, import.meta.url);
@@ -443,7 +504,7 @@ async function main() {
         continue;
       }
       writeFileSync(file, JSON.stringify(e, null, 2) + "\n");
-      for (const k of entryUrls(e)) known.add(k);
+      for (const k of entry672Urls(e)) known.set(k, 'NEW');
       written++;
     }
     await sleep(DELAY_MS);
@@ -463,4 +524,6 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   await main();
+}
+
 }

@@ -2,7 +2,7 @@
 import Site from "../../layouts/Site.astro";
 import ActivityHeatmap from "../../components/ActivityHeatmap.astro";
 import Discussion from "../../components/Comments.tsx";
-import EntryIcon from "../../components/EntryIcon.astro";
+import Listing from "../../components/Listing.tsx";
 import { StarsHistory, UsageHistory, ViewsHistory } from "../../components/RepoCharts.tsx";
 import { categories, labels } from "../../lib/catalog";
 
@@ -24,6 +24,44 @@ const hasGraphs =
   (entry.statsHistory?.length || 0) > 1 ||
   (entry.views?.weeks?.length || 0) > 0 ||
   (entry.activity?.length || 0) > 0;
+
+const shared = new Set((entry.tags || []).filter((t: string) => t !== category));
+const similar = categories
+  .flatMap((c) => c.items.map((i) => ({ item: i, category: c.id })))
+  .filter(
+    (s) =>
+      s.item.slug !== entry.slug &&
+      (s.category === category || s.item.tags?.some((t: string) => shared.has(t)))
+  )
+  .slice(0, 4)
+  .map((s) => ({
+    href: `/${s.category}/${s.item.slug}`,
+    name: s.item.name,
+    description: s.item.description,
+    stars: s.item.stats?.stars as number | undefined,
+  }));
+
+const installs: { label: string; href?: string; copy?: string }[] = [];
+if (category === "servers") {
+  const remote = entry.links?.website && !/github\.com/.test(entry.links.website) ? entry.links.website : "";
+  const config = remote ? { url: remote } : { command: "npx", args: ["-y", entry.slug] };
+  installs.push({
+    label: "Cursor",
+    href: `cursor://anysphere.cursor-deeplink/mcp/install?name=${encodeURIComponent(entry.slug)}&config=${encodeURIComponent(btoa(JSON.stringify(config)))}`,
+  });
+  installs.push({
+    label: "VS Code",
+    href: `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name: entry.slug, ...config }))}`,
+  });
+  if (remote) {
+    installs.push({
+      label: "Claude",
+      href: `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=${encodeURIComponent(entry.name)}&connectorUrl=${encodeURIComponent(remote)}`,
+    });
+  }
+} else if (category === "skills" && entry.repo) {
+  installs.push({ label: "Any agent", copy: `npx skills add ${entry.repo}` });
+}
 ---
 
 <Site
@@ -31,29 +69,29 @@ const hasGraphs =
   description={`${entry.name}: ${entry.description}`}
   categories={Object.entries(labels).map(([id, label]) => ({ id, label }))}
 >
-  <div class="hero">
-    <p class="crumbs"><a href="/">Catalog</a> / {label} / {entry.slug}</p>
-    <h1 style="display:flex;align-items:center;gap:0.75rem">
-      <EntryIcon url={entry.url} name={entry.name} size={40} />{entry.name}
-    </h1>
-    {entry.repo ? <p>by {entry.repo.split("/")[0]}</p> : <p>{label}</p>}
-  </div>
-
-  <div class="stat-row">
-    {s.stars !== undefined ? <span>★ <strong>{s.stars.toLocaleString()}</strong> stars</span> : null}
-    {s.forks !== undefined ? <span><strong>{s.forks.toLocaleString()}</strong> forks</span> : null}
-    {s.license ? <span>{s.license}</span> : null}
-    {s.tokens ? <span><strong>{s.tokens}</strong> tokens on OpenRouter</span> : null}
-    {entry.releases?.length ? <span>{entry.releases.length} releases tracked</span> : null}
-  </div>
-
-  <div class="link-row">
-    <a href={entry.url}>Visit →</a>
-    {entry.links?.website && entry.links.website !== entry.url ? <a href={entry.links.website}>Website</a> : null}
-    {entry.links?.docs ? <a href={entry.links.docs}>Docs</a> : null}
-    {entry.links?.github ? <a href={entry.links.github}>GitHub</a> : null}
-    <a href={`/llms/${category}-${entry.slug}.txt`}>llms.txt</a>
-  </div>
+  <p class="crumbs"><a href="/">Catalog</a> / {label} / {entry.slug}</p>
+  <Listing
+    client:load
+    name={entry.name}
+    owner={entry.repo?.split("/")[0]}
+    description={entry.description}
+    about={entry.about}
+    url={entry.url}
+    github={entry.links?.github}
+    stars={s.stars}
+    license={s.license}
+    pushedAt={s.pushedAt}
+    features={entry.features || []}
+    highlights={entry.highlights || []}
+    strengths={entry.verdict?.strengths || []}
+    tradeoffs={entry.verdict?.tradeoffs || []}
+    sampled={entry.verdict?.sampled}
+    pricing={entry.pricing || []}
+    pricingSource={entry.sources?.website}
+    builtWith={entry.builtWith || []}
+    similar={similar}
+    installs={installs}
+  />
 
   {entry.install ? (
     <div class="side-card" style="margin-bottom:1.5rem">
@@ -67,12 +105,6 @@ const hasGraphs =
 
   <div class="layout">
     <div>
-      <section class="block">
-        <h2>About</h2>
-        <p style="color:var(--muted);line-height:1.6">{entry.description}</p>
-        <p style="font-size:0.8rem;color:var(--malachite)">{(entry.tags || []).map((t) => `#${t}`).join(" ")}</p>
-      </section>
-
       {hasGraphs ? (
         <section class="block">
           <h2>Activity</h2>
@@ -110,22 +142,9 @@ const hasGraphs =
         </section>
       ) : null}
 
+      {entry.specs ? (
       <section class="block">
         <h2>FAQ</h2>
-        <details class="release">
-          <summary>What is {entry.name}?</summary>
-          <p>{entry.description}</p>
-        </details>
-        <details class="release">
-          <summary>Where is the homepage of {entry.name}?</summary>
-          <p><a href={entry.url}>{entry.url}</a></p>
-        </details>
-        {entry.repo ? (
-          <details class="release">
-            <summary>Who maintains {entry.name}?</summary>
-            <p><a href={`https://github.com/${entry.repo.split("/")[0]}`}>{entry.repo.split("/")[0]}</a> on GitHub{s.license ? ` — licensed ${s.license}` : ""}.</p>
-          </details>
-        ) : null}
         {entry.specs?.contextLength ? (
           <details class="release">
             <summary>What is the context length?</summary>
@@ -145,6 +164,7 @@ const hasGraphs =
           </details>
         ) : null}
       </section>
+      ) : null}
 
       {(() => {
         const vendor = (entry.permaslug || "").split("/")[0];

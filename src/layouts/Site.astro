@@ -131,7 +131,7 @@ const repo = "https://github.com/labsbytir/tir-list";
       .layout { display: grid; grid-template-columns: 1fr 320px; gap: 2rem; align-items: start; }
       section.block { margin-bottom: 2rem; }
       section.block h2 { font-size: 1rem; margin: 0 0 1rem; }
-      .grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+      .grid { display: flex; flex-direction: column; gap: 0.75rem; }
       .card {
         background: var(--evergreen);
         border: 1px solid var(--sea-green);
@@ -258,6 +258,7 @@ const repo = "https://github.com/labsbytir/tir-list";
           }
         </nav>
         <div class="header-actions">
+          <a class="btn-submit" href="/auth/login">Sign in</a>
           <a class="btn-submit" href={`${repo}/fork`}>Submit a tool</a>
           <button class="btn-menu" id="menuBtn" aria-label="Open menu">☰</button>
         </div>

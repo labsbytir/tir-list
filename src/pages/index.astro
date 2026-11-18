@@ -1,7 +1,6 @@
 ---
 import Site from "../layouts/Site.astro";
 import CatalogGrid from "../components/CatalogGrid.astro";
-import CategoryChart from "../components/CategoryChart.tsx";
 import { categories } from "../lib/catalog";
 
 export const prerender = true;
@@ -45,24 +44,11 @@ const allTags = [...new Set(categories.flatMap((c) => c.items.flatMap((e) => e.t
     </div>
   </div>
 
+  <div class="grid" id="grid">
+    <CatalogGrid categories={categories} />
+  </div>
   <div class="layout">
-    <div>
-      <section class="block">
-        <h2>Overview</h2>
-        <CategoryChart
-          client:load
-          data={categories.map((c) => ({ label: c.label, count: c.items.length }))}
-        />
-      </section>
-      <section class="block">
-        <h2>Browse tools</h2>
-        <div class="grid" id="grid">
-          <CatalogGrid categories={categories} server:defer>
-            <p slot="fallback">Loading catalog…</p>
-          </CatalogGrid>
-        </div>
-      </section>
-    </div>
+    <div></div>
     <aside>
       <div class="side-card">
         <header>Add your tool</header>

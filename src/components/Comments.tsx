@@ -83,7 +83,7 @@ export default function Discussion({ page }: { page: string }) {
         auth={{
           type: "api",
           signIn: () => {
-            window.location.href = "https://www.bosbase.com/";
+            window.location.href = "/auth/login";
           },
         }}
       />
