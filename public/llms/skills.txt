@@ -1,0 +1,4 @@
+# tir-list / skills
+
+- [agents.md](https://agents.md/): Convention for AGENTS.md agent instructions.
+- [Superpowers](https://github.com/obra/superpowers): Agent skills for brainstorming, systematic debugging, and plan execution.

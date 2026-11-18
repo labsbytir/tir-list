@@ -3,5 +3,13 @@
   "name": "My Skill",
   "description": "One line on what the skill does.",
   "url": "https://example.com/",
-  "tags": ["skills", "agents"]
+  "tags": [
+    "skills",
+    "agents"
+  ],
+  "links": {
+    "website": "https://example.com/",
+    "docs": "https://example.com/docs",
+    "github": "https://github.com/example/repo"
+  }
 }

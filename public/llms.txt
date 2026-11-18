@@ -1,0 +1,29 @@
+# tir-list
+
+> A catalog of modern web tools. Find Skills, Models, Containers, Servers, Agents and Tools.
+
+## agents
+
+- [Claude Code](https://github.com/anthropics/claude-code): Anthropic's agentic coding tool that lives in the terminal.
+
+## containers
+
+- [Wolfi](https://wolfi.dev/): Chainguard minimal Linux for containers.
+
+## models
+
+- [Muse Spark](https://www.meta.com/): Coding agent model family.
+
+## servers
+
+- [n8n MCP](https://n8n.io/): Workflow automation via MCP.
+- [Zapier MCP](https://zapier.com/): 9,000+ apps via Zapier tools.
+
+## skills
+
+- [agents.md](https://agents.md/): Convention for AGENTS.md agent instructions.
+- [Superpowers](https://github.com/obra/superpowers): Agent skills for brainstorming, systematic debugging, and plan execution.
+
+## tools
+
+- [GitHub CLI](https://cli.github.com/): GitHub on the command line: PRs, issues, and repos.

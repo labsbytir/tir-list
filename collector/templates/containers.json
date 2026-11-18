@@ -3,5 +3,12 @@
   "name": "My Image",
   "description": "One line on what the image contains.",
   "url": "https://example.com/",
-  "tags": ["containers"]
+  "tags": [
+    "containers"
+  ],
+  "links": {
+    "website": "https://example.com/",
+    "docs": "https://example.com/docs",
+    "github": "https://github.com/example/repo"
+  }
 }

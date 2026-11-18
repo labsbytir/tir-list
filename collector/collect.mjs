@@ -81,12 +81,17 @@ export function parseAwesome(markdown, limit) {
 }
 
 export function parseGithubTopic(json, limit) {
-  return (json.items || []).slice(0, limit).map((r) => ({
-    slug: slugify(r.name),
-    name: r.name,
-    description: (r.description || "").trim(),
-    url: r.html_url,
-  }));
+  return (json.items || []).slice(0, limit).map((r) => {
+    const links = { github: r.html_url };
+    if (r.homepage) links.website = r.homepage;
+    return {
+      slug: slugify(r.name),
+      name: r.name,
+      description: (r.description || "").trim(),
+      url: r.homepage || r.html_url,
+      links,
+    };
+  });
 }
 
 async function collectSource(src) {

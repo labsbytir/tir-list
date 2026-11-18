@@ -10,6 +10,7 @@ interface Entry {
   description: string;
   url: string;
   tags: string[];
+  links?: Record<string, string>;
 }
 
 const labels: Record<string, string> = {
@@ -165,6 +166,7 @@ const forkCmd = "gh repo fork labsbytir/tir-list --clone";
       .card-title a { color: var(--mist); text-decoration: none; }
       .card-title a:hover { color: var(--malachite); }
       .card-tags { font-size: 0.75rem; color: var(--malachite); margin: 0.25rem 0 0; }
+      .card-links { display: inline-flex; gap: 0.5rem; }
       .card-desc {
         font-size: 0.875rem;
         color: var(--muted);

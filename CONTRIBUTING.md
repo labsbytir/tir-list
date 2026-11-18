@@ -13,7 +13,7 @@ Add a tool to the catalog by forking and opening a pull request.
    - `catalog/servers/<slug>.json` — Servers
    - `catalog/agents/<slug>.json` — Agents
    - `catalog/tools/<slug>.json` — Tools
-4. Entry schema (the filename must match `slug`, which is unique within its folder):
+4. Entry schema (the filename must match `slug`, which is unique within its folder, `links` optional but validated when present):
 
    ```json
    {
@@ -21,7 +21,12 @@ Add a tool to the catalog by forking and opening a pull request.
      "name": "My Tool",
      "description": "One line on what it does.",
      "url": "https://example.com/",
-     "tags": ["tag-one", "tag-two"]
+     "tags": ["tag-one", "tag-two"],
+     "links": {
+       "website": "https://example.com/",
+       "docs": "https://example.com/docs",
+       "github": "https://github.com/example/repo"
+     }
    }
    ```
 

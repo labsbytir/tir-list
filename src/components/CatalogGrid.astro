@@ -5,6 +5,7 @@ interface Entry {
   description: string;
   url: string;
   tags: string[];
+  links?: Record<string, string>;
 }
 
 interface Category {
@@ -27,7 +28,11 @@ const { categories } = Astro.props as { categories: Category[] };
         <p class="card-desc">{item.description}</p>
         <div class="card-meta">
           <span>{c.label}</span>
-          <a href={item.url}>Visit →</a>
+          <span class="card-links">
+            <a href={item.url}>Visit →</a>
+            {item.links?.github && item.links.github !== item.url ? <a href={item.links.github}>GitHub</a> : null}
+            {item.links?.docs ? <a href={item.links.docs}>Docs</a> : null}
+          </span>
         </div>
       </article>
     )),

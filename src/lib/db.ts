@@ -8,6 +8,7 @@ export interface Listing {
   description: string;
   url: string;
   tags: string[];
+  links?: Record<string, string>;
 }
 
 let db: PGlite | null = null;
@@ -26,6 +27,7 @@ export async function getDb(): Promise<PGlite> {
         description TEXT NOT NULL,
         url TEXT NOT NULL,
         tags JSONB NOT NULL DEFAULT '[]',
+        links JSONB NOT NULL DEFAULT '{}',
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         PRIMARY KEY (category, slug)
       );
@@ -49,6 +51,7 @@ export async function getDb(): Promise<PGlite> {
         PRIMARY KEY ("userId", "commentId")
       );
       CREATE INDEX IF NOT EXISTS comment_idx ON rates ("commentId");
+      ALTER TABLE listings ADD COLUMN IF NOT EXISTS links JSONB NOT NULL DEFAULT '{}';
     `);
   }
   return db;
@@ -57,13 +60,14 @@ export async function getDb(): Promise<PGlite> {
 export async function upsertListing(entry: Listing): Promise<void> {
   const client = await getDb();
   await client.query(
-    `INSERT INTO listings (slug, category, name, description, url, tags)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO listings (slug, category, name, description, url, tags, links)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (category, slug) DO UPDATE SET
        name = EXCLUDED.name,
        description = EXCLUDED.description,
        url = EXCLUDED.url,
        tags = EXCLUDED.tags,
+       links = EXCLUDED.links,
        updated_at = now()`,
     [
       entry.slug,
@@ -72,6 +76,7 @@ export async function upsertListing(entry: Listing): Promise<void> {
       entry.description,
       entry.url,
       JSON.stringify(entry.tags),
+      JSON.stringify(entry.links || {}),
     ]
   );
 }

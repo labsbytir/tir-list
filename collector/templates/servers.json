@@ -3,5 +3,12 @@
   "name": "My Server",
   "description": "One line on what the server exposes.",
   "url": "https://example.com/",
-  "tags": ["mcp"]
+  "tags": [
+    "mcp"
+  ],
+  "links": {
+    "website": "https://example.com/",
+    "docs": "https://example.com/docs",
+    "github": "https://github.com/example/repo"
+  }
 }

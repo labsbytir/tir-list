@@ -22,6 +22,7 @@ for (const category of readdirSync(root).sort()) {
       description: e.description,
       url: e.url,
       tags: e.tags,
+      links: e.links || {},
     });
   }
 }

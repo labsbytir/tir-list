@@ -5,6 +5,7 @@ export interface RemoteListing {
   description: string;
   url: string;
   tags: string[];
+  links?: Record<string, string>;
 }
 
 export function bosbaseConfig(): { base: string; key: string | null } {

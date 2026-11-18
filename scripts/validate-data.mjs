@@ -34,6 +34,16 @@ for (const category of readdirSync(root).sort()) {
       fail(`${where}: "tags" must be a non-empty array of strings`);
     }
     if (typeof e?.url === "string" && !/^https?:\/\//.test(e.url)) fail(`${where}: "url" must start with http(s)`);
+    if (e?.links !== undefined) {
+      if (typeof e.links !== "object" || e.links === null || Array.isArray(e.links)) {
+        fail(`${where}: "links" must be an object`);
+      } else {
+        for (const [k, v] of Object.entries(e.links)) {
+          if (!["website", "docs", "github"].includes(k)) fail(`${where}: unknown links key "${k}"`);
+          else if (typeof v !== "string" || !/^https?:\/\//.test(v)) fail(`${where}: links.${k} must start with http(s)`);
+        }
+      }
+    }
     if (typeof e?.slug === "string") {
       if (e.slug !== file.replace(/\.json$/, "")) fail(`${where}: filename must match slug "${e.slug}"`);
       if (slugs.has(e.slug)) fail(`${where}: duplicate slug "${e.slug}"`);

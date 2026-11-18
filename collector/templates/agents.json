@@ -3,5 +3,12 @@
   "name": "My Agent",
   "description": "One line on what the agent does.",
   "url": "https://example.com/",
-  "tags": ["agents"]
+  "tags": [
+    "agents"
+  ],
+  "links": {
+    "website": "https://example.com/",
+    "docs": "https://example.com/docs",
+    "github": "https://github.com/example/repo"
+  }
 }

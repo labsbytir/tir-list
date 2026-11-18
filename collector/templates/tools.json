@@ -3,5 +3,13 @@
   "name": "My Tool",
   "description": "One line on what the tool does.",
   "url": "https://example.com/",
-  "tags": ["tools", "cli"]
+  "tags": [
+    "tools",
+    "cli"
+  ],
+  "links": {
+    "website": "https://example.com/",
+    "docs": "https://example.com/docs",
+    "github": "https://github.com/example/repo"
+  }
 }

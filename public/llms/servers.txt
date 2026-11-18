@@ -1,0 +1,4 @@
+# tir-list / servers
+
+- [n8n MCP](https://n8n.io/): Workflow automation via MCP.
+- [Zapier MCP](https://zapier.com/): 9,000+ apps via Zapier tools.

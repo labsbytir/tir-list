@@ -3,5 +3,12 @@
   "name": "My Model",
   "description": "One line on what the model is for.",
   "url": "https://example.com/",
-  "tags": ["models"]
+  "tags": [
+    "models"
+  ],
+  "links": {
+    "website": "https://example.com/",
+    "docs": "https://example.com/docs",
+    "github": "https://github.com/example/repo"
+  }
 }
