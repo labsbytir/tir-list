@@ -29,11 +29,13 @@ npm run build
 ```ini
 [Unit]
 Description=tir-list
-After=network.target
+After=network.target valkey-server.service
 
 [Service]
 WorkingDirectory=/srv/tir-list
 Environment=NODE_ENV=production
+Environment=HOST=0.0.0.0
+Environment=PORT=3000
 Environment=PGLITE_DIR=/var/lib/tir-list/pglite
 Environment=VALKEY_URL=redis://127.0.0.1:6379
 Environment=BOSBASE_URL=https://www.bosbase.com
