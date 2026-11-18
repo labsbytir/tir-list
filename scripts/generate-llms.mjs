@@ -80,7 +80,7 @@ for (const [category, entries] of perCategory) {
           ]
         : []),
       ...(e.permaslug
-        ? [`openrouter: https://openrouter.ai/${e.permaslug}`]
+        ? [`model page: https://openrouter.ai/${e.permaslug}`]
         : []),
       ...(e.releases?.length
         ? [

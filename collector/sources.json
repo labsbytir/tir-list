@@ -91,13 +91,13 @@
       "limit": 40
     },
     {
-      "type": "openrouter-models",
+      "type": "model-catalog",
       "category": "models",
       "limit": 40,
       "exclude": [":batch"]
     },
     {
-      "type": "openrouter-apps",
+      "type": "app-rankings",
       "category": "tools",
       "limit": 30
     }

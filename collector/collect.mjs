@@ -114,7 +114,7 @@ export function cleanDescription(s, limit = 300) {
     .slice(0, limit);
 }
 
-export function parseOpenRouterModels(json, limit, exclude = [":batch"]) {
+export function parseModelCatalog(json, limit, exclude = [":batch"]) {
   return (json.data || [])
     .filter((m) => !exclude.some((x) => m.id.includes(x)))
     .slice(0, limit)
@@ -144,7 +144,7 @@ export function parseOpenRouterModels(json, limit, exclude = [":batch"]) {
     }));
 }
 
-export function parseOpenRouterApps(html, limit) {
+export function parseAppRankings(html, limit) {
   const out = [];
   const seen = new Set();
   const listMatch = html.match(/"itemListElement":\[(.*?)\]\s*}<\/script>/s);
@@ -181,7 +181,7 @@ export function parseOpenRouterApps(html, limit) {
       name,
       description: desc.replace(/&#x27;/g, "'").trim(),
       url,
-      tags: ["tools", "openrouter"],
+      tags: ["tools"],
       links: {
         website: url.startsWith("https://openrouter.ai/apps") ? url : undefined,
       },
@@ -232,26 +232,26 @@ async function collectSource(src) {
   const orHeaders = process.env.OPENROUTER_API_KEY
     ? { authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` }
     : {};
-  if (src.type === "openrouter-models") {
+  if (src.type === "model-catalog") {
     const data = JSON.parse(
       await fetchText(
         "https://openrouter.ai/api/v1/models",
-        "openrouter-models",
+        "model-catalog",
         orHeaders
       )
     );
-    return parseOpenRouterModels(data, src.limit, src.exclude).map((e) => ({
+    return parseModelCatalog(data, src.limit, src.exclude).map((e) => ({
       ...e,
       tags: [src.category, ...e.tags.slice(1)],
     }));
   }
-  if (src.type === "openrouter-apps") {
+  if (src.type === "app-rankings") {
     const html = await fetchText(
       "https://openrouter.ai/apps",
-      "openrouter-apps",
+      "app-rankings",
       orHeaders
     );
-    return parseOpenRouterApps(html, src.limit).map((e) => ({
+    return parseAppRankings(html, src.limit).map((e) => ({
       ...e,
       tags: [src.category, ...e.tags.slice(1)],
     }));

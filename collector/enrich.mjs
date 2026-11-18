@@ -189,7 +189,7 @@ function loadEntries() {
   return out;
 }
 
-async function enrichOpenRouterUsage(items) {
+async function enrichUsageStats(items) {
   if (!process.env.OPENROUTER_API_KEY) {
     console.warn("OPENROUTER_API_KEY not set, skipping usage history.");
     return 0;
@@ -202,8 +202,8 @@ async function enrichOpenRouterUsage(items) {
         "user-agent": UA,
         authorization: `Bearer ${key}`,
       },
-      dispatcher: proxyUrlFor("openrouter-usage")
-        ? new ProxyAgent(proxyUrlFor("openrouter-usage"))
+      dispatcher: proxyUrlFor("usage-stats")
+        ? new ProxyAgent(proxyUrlFor("usage-stats"))
         : undefined,
     }
   );
@@ -250,7 +250,7 @@ async function main() {
       );
     }
     console.log(
-      `dry run: ${items.length} repo-backed + ${modelItems.length} OpenRouter entries`
+      `dry run: ${items.length} repo-backed + ${modelItems.length} catalog-matched entries`
     );
     return;
   }
@@ -279,7 +279,7 @@ async function main() {
   }
   console.log(`done: ${updated}/${items.length} enriched`);
   try {
-    const usage = await enrichOpenRouterUsage(all);
+    const usage = await enrichUsageStats(all);
     console.log(`usage history: ${usage} models updated`);
   } catch (err) {
     console.error(`usage enrichment failed, continuing (${err.message})`);
