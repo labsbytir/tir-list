@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.8",
-    "astro": "^7.4.12"
+    "astro": "^7.4.12",
+    "flexsearch": "^0.8.212"
   },
   "devDependencies": {
     "lint-staged": "^15.2.11",

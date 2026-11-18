@@ -22,7 +22,7 @@ const { categories } = Astro.props as { categories: Category[] };
       <article
         class="card"
         data-cat={c.id}
-        data-search={`${item.name} ${item.description} ${item.tags.join(" ")}`.toLowerCase()}
+        data-key={`${c.id}:${item.slug}`}
       >
         <h3>
           <a href={item.url}>{item.name}</a>

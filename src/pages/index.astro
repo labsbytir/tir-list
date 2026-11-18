@@ -50,18 +50,54 @@ const categories = [
       </CatalogGrid>
     </main>
     <script>
+      import { Document } from "flexsearch";
+
       const q = document.getElementById("q");
       const tabs = document.getElementById("tabs");
       const grid = document.getElementById("grid");
       let cat = "all";
+      let keyOf = new Map();
+      let index = buildIndex();
+
+      function buildIndex() {
+        const idx = new Document({
+          tokenize: "forward",
+          document: { id: "id", index: "text" },
+        });
+        keyOf = new Map();
+        let id = 0;
+        for (const el of grid.children) {
+          if (!el.dataset || !el.dataset.key) continue;
+          id += 1;
+          keyOf.set(el.dataset.key, id);
+          idx.add({ id, text: el.textContent || "" });
+        }
+        return idx;
+      }
+
       function apply() {
-        const needle = (q.value || "").toLowerCase();
+        const needle = (q.value || "").trim();
+        let hits = null;
+        if (needle) {
+          hits = new Set();
+          const found = index.search(needle, { suggest: true });
+          for (const group of found) {
+            for (const id of group.result) hits.add(id);
+          }
+        }
         for (const el of grid.children) {
           const okCat = cat === "all" || el.dataset.cat === cat;
-          const okQ = !needle || (el.dataset.search || "").includes(needle);
+          const okQ = !hits || hits.has(keyOf.get(el.dataset.key));
           el.style.display = okCat && okQ ? "" : "none";
         }
       }
+
+      // Re-index when the deferred server island swaps in its content.
+      new MutationObserver(() => {
+        index = buildIndex();
+        apply();
+      }).observe(grid, { childList: true });
+
       q.addEventListener("input", apply);
       tabs.addEventListener("click", (e) => {
         const b = e.target.closest("button");
