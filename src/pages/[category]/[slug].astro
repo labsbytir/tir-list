@@ -2,31 +2,18 @@
 import Site from "../../layouts/Site.astro";
 import ActivityHeatmap from "../../components/ActivityHeatmap.astro";
 import { StarsHistory, ViewsHistory } from "../../components/RepoCharts.tsx";
+import { categories, labels } from "../../lib/catalog";
 
 export const prerender = true;
 
 export async function getStaticPaths() {
-  const modules = import.meta.glob("../../../catalog/*/*.json", { eager: true }) as Record<
-    string,
-    { default: Record<string, unknown> }
-  >;
-  return Object.entries(modules).map(([path, mod]) => {
-    const [category, file] = path.split("/").slice(-2);
-    return {
-      params: { category, slug: file.replace(/\.json$/, "") },
-      props: { entry: mod.default, category },
-    };
-  });
+  return categories.flatMap((c) =>
+    c.items.map((entry) => ({
+      params: { category: c.id, slug: entry.slug },
+      props: { entry, category: c.id },
+    }))
+  );
 }
-
-const labels: Record<string, string> = {
-  skills: "Skills",
-  models: "Models",
-  containers: "Containers",
-  servers: "Servers",
-  agents: "Agents",
-  tools: "Tools",
-};
 
 const { entry, category } = Astro.props as { entry: any; category: string };
 const label = labels[category] || category;

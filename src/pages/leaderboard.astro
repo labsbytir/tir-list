@@ -1,0 +1,55 @@
+---
+import Site from "../layouts/Site.astro";
+import { categories, labels, starsOf } from "../lib/catalog";
+
+export const prerender = true;
+
+const ranked = categories.flatMap((c) =>
+  c.items.map((e) => ({ entry: e, category: c.id, stars: starsOf(e) }))
+);
+const withStars = ranked.filter((r) => r.stars !== null).sort((a, b) => b.stars! - a.stars!);
+const unranked = ranked.filter((r) => r.stars === null);
+---
+
+<Site
+  title="Leaderboard — tir-list"
+  description="Top catalog entries by GitHub stars."
+  categories={categories.map((c) => ({ id: c.id, label: c.label }))}
+>
+  <div class="hero">
+    <p class="crumbs"><a href="/">Catalog</a> / Leaderboard</p>
+    <h1>Leaderboard</h1>
+    <p>Top entries by GitHub stars. Run <code>npm run collect:enrich</code> to refresh stats.</p>
+  </div>
+
+  {categories.map((c) => {
+    const rows = withStars.filter((r) => r.category === c.id);
+    if (!rows.length) return null;
+    return (
+      <section class="block">
+        <h2>{c.label}</h2>
+        {rows.map((r, i) => (
+          <div class="release">
+            <h3>
+              #{i + 1} <a href={`/${c.id}/${r.entry.slug}`}>{r.entry.name}</a> — {r.stars!.toLocaleString()} ★
+            </h3>
+          </div>
+        ))}
+      </section>
+    );
+  })}
+
+  {unranked.length ? (
+    <section class="block">
+      <h2>Unranked (no stats yet)</h2>
+      {unranked.map((r) => (
+        <div class="release">
+          <h3>
+            <a href={`/${r.category}/${r.entry.slug}`}>{r.entry.name}</a>
+            <span style="color:var(--muted)"> · {labels[r.category]}</span>
+          </h3>
+        </div>
+      ))}
+    </section>
+  ) : null}
+</Site>

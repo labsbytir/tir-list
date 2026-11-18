@@ -2,47 +2,9 @@
 import Site from "../layouts/Site.astro";
 import CatalogGrid from "../components/CatalogGrid.astro";
 import CategoryChart from "../components/CategoryChart.tsx";
+import { categories } from "../lib/catalog";
 
 export const prerender = true;
-
-interface Entry {
-  slug: string;
-  name: string;
-  description: string;
-  url: string;
-  tags: string[];
-  links?: Record<string, string>;
-}
-
-const labels: Record<string, string> = {
-  skills: "Skills",
-  models: "Models",
-  containers: "Containers",
-  servers: "Servers",
-  agents: "Agents",
-  tools: "Tools",
-};
-
-const order = ["skills", "models", "containers", "servers", "agents", "tools"];
-
-const modules = import.meta.glob("../../catalog/*/*.json", { eager: true }) as Record<
-  string,
-  { default: Entry }
->;
-
-const byCategory = new Map<string, Entry[]>();
-for (const [path, mod] of Object.entries(modules)) {
-  const id = path.split("/").slice(-2, -1)[0];
-  if (!byCategory.has(id)) byCategory.set(id, []);
-  byCategory.get(id)!.push(mod.default);
-}
-for (const items of byCategory.values()) {
-  items.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-const categories = order
-  .filter((id) => byCategory.has(id))
-  .map((id) => ({ id, label: labels[id], items: byCategory.get(id)! }));
 
 const repo = "https://github.com/labsbytir/tir-list";
 const cloneCmd = `git clone ${repo}.git`;

@@ -1,0 +1,41 @@
+---
+import Site from "../layouts/Site.astro";
+import { categories, velocityOf } from "../lib/catalog";
+
+export const prerender = true;
+
+const rows = categories
+  .flatMap((c) => c.items.map((e) => ({ entry: e, category: c.id, label: c.label, v: velocityOf(e) })))
+  .filter((r) => r.v !== null)
+  .sort((a, b) => b.v! - a.v!);
+---
+
+<Site
+  title="Trending — tir-list"
+  description="Fastest-gaining catalog entries by stars per day."
+  categories={categories.map((c) => ({ id: c.id, label: c.label }))}
+>
+  <div class="hero">
+    <p class="crumbs"><a href="/">Catalog</a> / Trending</p>
+    <h1>Trending</h1>
+    <p>Stars gained per day, from enrich snapshots.</p>
+  </div>
+
+  <section class="block">
+    {rows.length ? (
+      rows.map((r) => (
+        <div class="release">
+          <h3>
+            <a href={`/${r.category}/${r.entry.slug}`}>{r.entry.name}</a> — +{r.v!.toFixed(1)} ★/day
+          </h3>
+          <p>{r.label}</p>
+        </div>
+      ))
+    ) : (
+      <p style="color:var(--muted)">
+        Not enough history yet — trending unlocks after <code>npm run collect:enrich</code> has run at least twice on
+        different days.
+      </p>
+    )}
+  </section>
+</Site>

@@ -1,0 +1,40 @@
+---
+import Site from "../layouts/Site.astro";
+import { categories } from "../lib/catalog";
+
+export const prerender = true;
+
+const releases = categories
+  .flatMap((c) => (c.items.flatMap((e) => (e.releases || []).map((r) => ({ ...r, entry: e, category: c.id })))))
+  .sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
+---
+
+<Site
+  title="Fresh — tir-list"
+  description="Latest releases across the catalog."
+  categories={categories.map((c) => ({ id: c.id, label: c.label }))}
+>
+  <div class="hero">
+    <p class="crumbs"><a href="/">Catalog</a> / Fresh</p>
+    <h1>Fresh</h1>
+    <p>The newest releases across every tracked repo.</p>
+  </div>
+
+  <section class="block">
+    {releases.length ? (
+      releases.slice(0, 30).map((r) => (
+        <div class="release">
+          <h3>
+            <a href={r.url}>{r.entry.name} {r.tag}</a>
+          </h3>
+          {r.publishedAt ? <time>{r.publishedAt.slice(0, 10)}</time> : null}
+          {r.notes ? <p>{r.notes.slice(0, 200)}</p> : null}
+        </div>
+      ))
+    ) : (
+      <p style="color:var(--muted)">
+        No releases tracked yet — run <code>npm run collect:enrich</code> to collect them from linked GitHub repos.
+      </p>
+    )}
+  </section>
+</Site>
