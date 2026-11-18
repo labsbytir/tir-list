@@ -1,0 +1,65 @@
+{
+  "slug": "fixture-agent",
+  "name": "Fixture Agent",
+  "description": "A complete agent fixture for contract tests.",
+  "url": "https://example.com/fixture-agent",
+  "tags": ["agents", "testing"],
+  "details": {
+    "bestFor": ["Nightly triage"],
+    "compatibility": [{ "kind": "runtime", "name": "Example Runtime" }],
+    "requirements": [
+      { "kind": "api-key", "description": "Example model API key" }
+    ],
+    "setup": {
+      "difficulty": "intermediate",
+      "steps": ["Create an API key", "Schedule the agent"],
+      "instructions": [
+        {
+          "label": "Docs",
+          "target": "docs",
+          "kind": "link",
+          "value": "https://example.com/fixture-agent/docs",
+          "sourceUrl": "https://example.com/fixture-agent/docs"
+        }
+      ]
+    },
+    "cost": {
+      "model": "subscription",
+      "plans": [
+        {
+          "name": "Team",
+          "amount": 20,
+          "currency": "USD",
+          "unit": "seat/mo",
+          "sourceUrl": "https://example.com/fixture-agent/pricing"
+        }
+      ],
+      "externalCosts": ["Model API usage billed separately"]
+    },
+    "dataHandling": {
+      "processing": "cloud",
+      "retention": "30 days",
+      "destinations": ["Vendor API"]
+    }
+  },
+  "categoryDetails": {
+    "agents": {
+      "tasks": ["Triage issues"],
+      "environments": ["Hosted"],
+      "triggers": ["schedule"],
+      "modelRequirements": ["Example model API access"],
+      "integrations": ["issue tracker"],
+      "deploymentOptions": ["hosted"],
+      "autonomy": "Acts only on labeled issues",
+      "approvalControls": "Requires approval before commenting",
+      "memory": "Retains triage history for 30 days"
+    }
+  },
+  "evidence": {
+    "verification": {
+      "checkedAt": "2026-02-01",
+      "fields": ["details.setup"],
+      "method": "Followed the linked docs end to end"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "slug": "fixture-tool",
+  "name": "Fixture Tool",
+  "description": "A complete tool fixture for contract tests.",
+  "url": "https://example.com/fixture-tool",
+  "tags": ["tools", "testing"],
+  "details": {
+    "bestFor": ["Single-file exports"],
+    "setup": {
+      "difficulty": "beginner",
+      "estimatedMinutes": 2,
+      "steps": ["Sign up", "Export a file"],
+      "instructions": [
+        {
+          "label": "Docs",
+          "target": "docs",
+          "kind": "link",
+          "value": "https://example.com/fixture-tool/docs",
+          "sourceUrl": "https://example.com/fixture-tool/docs"
+        }
+      ]
+    },
+    "cost": {
+      "model": "freemium",
+      "plans": [
+        {
+          "name": "Starter",
+          "amount": 0,
+          "currency": "USD",
+          "unit": "mo",
+          "sourceUrl": "https://example.com/fixture-tool/pricing"
+        }
+      ],
+      "trial": "14-day team trial, no card required"
+    },
+    "media": [
+      {
+        "kind": "screenshot",
+        "url": "https://example.com/fixture-tool/shot.png",
+        "alt": "Export dialog of Fixture Tool"
+      },
+      {
+        "kind": "demo",
+        "url": "https://example.com/fixture-tool/demo",
+        "caption": "Click-to-load walkthrough"
+      }
+    ]
+  },
+  "categoryDetails": {
+    "tools": {
+      "integrations": ["Example Storage"],
+      "importFormats": ["csv"],
+      "exportFormats": ["csv", "json"],
+      "offlineSupport": false,
+      "accountRequired": true,
+      "offlineLimitations": "Requires connectivity; no offline mode",
+      "accessibility": "Keyboard navigable per vendor statement",
+      "cancellationUrl": "https://example.com/fixture-tool/cancel"
+    }
+  },
+  "evidence": {
+    "facts": [
+      {
+        "field": "details.cost.plans[0]",
+        "sourceUrl": "https://example.com/fixture-tool/pricing",
+        "observedAt": "2026-01-10",
+        "attribution": "publisher"
+      }
+    ]
+  }
+}

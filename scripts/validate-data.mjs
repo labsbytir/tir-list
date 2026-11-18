@@ -1,5 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+  validateCategoryDetails,
+  validateDetails,
+  validateEvidence,
+} from "../src/lib/listing-contract.ts";
 
 const root = new URL("../catalog/", import.meta.url);
 let failed = false;
@@ -7,6 +12,22 @@ const fail = (msg) => {
   failed = true;
   console.error(msg);
 };
+
+// Slug index for details.alternatives targets (filename must match slug).
+const slugsByCategory = new Map();
+for (const category of readdirSync(root).sort()) {
+  const dir = join(root.pathname, category);
+  let files;
+  try {
+    files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+  } catch {
+    continue;
+  }
+  slugsByCategory.set(
+    category,
+    new Set(files.sort().map((f) => f.replace(/\.json$/, "")))
+  );
+}
 
 for (const category of readdirSync(root).sort()) {
   const dir = join(root.pathname, category);
@@ -124,6 +145,18 @@ for (const category of readdirSync(root).sort()) {
       if (slugs.has(e.slug)) fail(`${where}: duplicate slug "${e.slug}"`);
       slugs.add(e.slug);
     }
+    if (e?.details !== undefined)
+      for (const msg of validateDetails(where, e.details, slugsByCategory))
+        fail(msg);
+    if (e?.categoryDetails !== undefined)
+      for (const msg of validateCategoryDetails(
+        where,
+        category,
+        e.categoryDetails
+      ))
+        fail(msg);
+    if (e?.evidence !== undefined)
+      for (const msg of validateEvidence(where, e.evidence)) fail(msg);
   }
 }
 

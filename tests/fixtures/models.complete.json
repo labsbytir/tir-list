@@ -1,0 +1,60 @@
+{
+  "slug": "fixture-model",
+  "name": "Fixture Model",
+  "description": "A complete model fixture for contract tests.",
+  "url": "https://example.com/fixture-model",
+  "tags": ["models", "testing"],
+  "details": {
+    "bestFor": ["Long-context summarization"],
+    "notSuitedFor": ["Offline inference"],
+    "cost": {
+      "model": "usage-based",
+      "plans": [
+        {
+          "name": "Input",
+          "amount": 1.25,
+          "currency": "USD",
+          "unit": "1M tokens",
+          "notes": "Provider rate as published",
+          "sourceUrl": "https://example.com/fixture-model/pricing"
+        },
+        {
+          "name": "Cached input",
+          "amount": 0.3,
+          "currency": "USD",
+          "unit": "1M tokens",
+          "notes": "Cached-token rate as published",
+          "sourceUrl": "https://example.com/fixture-model/pricing"
+        }
+      ]
+    }
+  },
+  "categoryDetails": {
+    "models": {
+      "provider": "Example",
+      "version": "2.0",
+      "availability": "hosted",
+      "licenseRestrictions": "API terms apply; weights not downloadable",
+      "toolCalling": false,
+      "structuredOutput": true,
+      "accessOptions": [
+        { "label": "API", "url": "https://example.com/fixture-model/api" }
+      ],
+      "hardwareRequirements": "None for API use",
+      "rateLimits": "60 requests per minute"
+    }
+  },
+  "evidence": {
+    "benchmarks": [
+      {
+        "metric": "FixtureBench",
+        "value": 80,
+        "scale": "0-100",
+        "sourceUrl": "https://example.com/fixture-model/bench",
+        "measuredAt": "2026-01-15",
+        "target": "fixture-model 2.0",
+        "methodologyUrl": "https://example.com/fixture-model/bench-method"
+      }
+    ]
+  }
+}

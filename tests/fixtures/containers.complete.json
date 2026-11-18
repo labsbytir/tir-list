@@ -1,0 +1,63 @@
+{
+  "slug": "fixture-container",
+  "name": "Fixture Container",
+  "description": "A complete container fixture for contract tests.",
+  "url": "https://example.com/fixture-container",
+  "tags": ["containers", "testing"],
+  "details": {
+    "bestFor": ["Reproducible batch jobs"],
+    "setup": {
+      "difficulty": "intermediate",
+      "instructions": [
+        {
+          "label": "Pull",
+          "target": "terminal",
+          "kind": "command",
+          "value": "podman pull example/fixture:1.0",
+          "sourceUrl": "https://example.com/fixture-container/docs"
+        }
+      ]
+    },
+    "cost": { "model": "free" }
+  },
+  "categoryDetails": {
+    "containers": {
+      "registry": "example",
+      "repository": "example/fixture",
+      "tag": "1.0",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "baseOs": "Wolfi",
+      "license": "Apache-2.0",
+      "versionPolicy": "Semver tags",
+      "updateCadence": "Monthly",
+      "architectures": ["linux/amd64", "linux/arm64"],
+      "requiredPrivileges": ["Must run as root for device access"],
+      "rootless": false,
+      "sizes": [
+        { "architecture": "linux/amd64", "bytes": 12345678, "basis": "compressed" },
+        { "architecture": "linux/arm64", "bytes": 11223344, "basis": "compressed" }
+      ],
+      "ports": ["8080/tcp"],
+      "volumes": ["/data"],
+      "environment": [
+        {
+          "name": "API_TOKEN",
+          "description": "Service API token; pass at runtime, never bake into the image",
+          "secret": true
+        }
+      ]
+    }
+  },
+  "evidence": {
+    "security": [
+      {
+        "type": "scan",
+        "sourceUrl": "https://example.com/fixture-container/scan",
+        "checkedAt": "2026-02-01",
+        "target": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "result": "2 medium, 0 high",
+        "counts": { "critical": 0, "high": 0, "medium": 2 }
+      }
+    ]
+  }
+}

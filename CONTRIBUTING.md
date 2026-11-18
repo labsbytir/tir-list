@@ -35,6 +35,20 @@ Add a tool to the catalog by forking and opening a pull request.
 
 Maintainers refresh GitHub stats with `npm run collect:enrich` (needs `WEBSHARE_PROXY`, optional `GITHUB_TOKEN`); it fills `stats`, `releases`, `changelog`, and `activity` on repo-backed entries.
 
+## Listing detail metadata (optional)
+
+Entries may add `details`, `categoryDetails`, and `evidence` objects (see `openspec/changes/listing-page-content/design.md` for the full dictionary and `src/lib/catalog.ts` for types). Rules:
+
+- All new fields are optional; existing `name`, `description`, `about`, `features`, `tags`, `specs`, and link fields stay authoritative fallbacks. Sparse entries without new metadata remain valid.
+- `categoryDetails` holds only the key matching the entry's folder (`skills`, `agents`, `containers`, `servers`, `models`, or `tools`).
+- Unknown values render as "Not provided"; explicit `false`/`0` render as unsupported/zero, never as missing. Amount `0` still requires `currency` and `unit`.
+- Every `details.setup.instructions` entry requires `sourceUrl`. Screenshot `details.media` entries require `alt`.
+- Examples use placeholders such as `<YOUR_TOKEN>`; the validator rejects known live-secret patterns, but review is still required.
+- Dates are ISO 8601 and never in the future. Verification identifies the checked fields — a timestamp alone never marks a listing verified.
+- Run `npm run validate:data` (nested rules live in `src/lib/listing-contract.ts`) and `npm run test:contract` before opening a PR.
+
+Collector ownership: `collector/collect.mjs` and `collector/enrich.mjs` only write collector-owned keys (`repo`, `stats`, `statsHistory`, `releases`, `changelog`, `activity`, `views`, `verdict`, `builtWith`, `features`, `pricing`, `about`, `sources`, `usageHistory`). They never assign `details`, `categoryDetails`, or `evidence` — hand-supplied metadata survives refresh. `tests/listing-contract.test.ts` guards this.
+
 ## Rules
 
 - One entry per PR keeps review fast.

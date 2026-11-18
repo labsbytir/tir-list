@@ -1,0 +1,80 @@
+{
+  "slug": "fixture-server",
+  "name": "Fixture Server",
+  "description": "A complete MCP server fixture for contract tests.",
+  "url": "https://example.com/fixture-server",
+  "tags": ["servers", "testing"],
+  "details": {
+    "bestFor": ["Catalog search from agents"],
+    "requirements": [
+      { "kind": "api-key", "description": "Search API key" }
+    ],
+    "setup": {
+      "difficulty": "beginner",
+      "instructions": [
+        {
+          "label": "Client config",
+          "target": "Example Client",
+          "kind": "configuration",
+          "value": "{\"url\": \"https://mcp.example.com\", \"token\": \"<YOUR_TOKEN>\"}",
+          "sourceUrl": "https://example.com/fixture-server/docs"
+        }
+      ],
+      "example": {
+        "input": "{\"query\": \"testing\"}",
+        "output": "{\"results\": []}"
+      }
+    },
+    "cost": { "model": "usage-based" },
+    "dataHandling": {
+      "processing": "cloud",
+      "permissions": ["search index read"],
+      "destinations": ["Search API"]
+    }
+  },
+  "categoryDetails": {
+    "servers": {
+      "transport": "Streamable HTTP",
+      "hosting": "remote",
+      "clients": [{ "kind": "client", "name": "Example Client" }],
+      "authentication": {
+        "methods": ["Bearer token"],
+        "scopes": ["search:read"]
+      },
+      "tools": [
+        {
+          "name": "search",
+          "description": "Searches the catalog index",
+          "effect": "read"
+        },
+        {
+          "name": "publish",
+          "description": "Publishes a new catalog entry",
+          "effect": "write"
+        },
+        {
+          "name": "purge",
+          "description": "Deletes catalog entries",
+          "effect": "destructive"
+        }
+      ],
+      "resources": [
+        { "name": "catalog://index", "description": "The searchable index" }
+      ],
+      "prompts": [
+        { "name": "triage", "description": "Triage prompt template" }
+      ]
+    }
+  },
+  "evidence": {
+    "facts": [
+      {
+        "field": "categoryDetails.servers.tools",
+        "sourceUrl": "https://example.com/fixture-server/docs",
+        "observedAt": "2026-01-10",
+        "attribution": "publisher",
+        "version": "1.4.0"
+      }
+    ]
+  }
+}

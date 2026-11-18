@@ -1,0 +1,76 @@
+{
+  "slug": "fixture-skill",
+  "name": "Fixture Skill",
+  "description": "A complete skill fixture for contract tests.",
+  "url": "https://example.com/fixture-skill",
+  "tags": ["skills", "testing"],
+  "details": {
+    "bestFor": ["Drafting release notes"],
+    "notSuitedFor": ["Real-time control loops"],
+    "compatibility": [
+      { "kind": "host", "name": "Example Agent", "versions": ">=2.0" }
+    ],
+    "requirements": [
+      { "kind": "account", "description": "Example account for publishing" }
+    ],
+    "setup": {
+      "difficulty": "beginner",
+      "estimatedMinutes": 5,
+      "steps": ["Install the skill runner", "Add the skill by name"],
+      "instructions": [
+        {
+          "label": "Add skill",
+          "target": "terminal",
+          "kind": "command",
+          "value": "npx skills add example/fixture-skill",
+          "sourceUrl": "https://example.com/fixture-skill/docs"
+        }
+      ],
+      "example": {
+        "input": "Summarize these notes",
+        "output": "Three bullets",
+        "environment": "skill runner v2"
+      }
+    },
+    "cost": { "model": "free" },
+    "dataHandling": {
+      "processing": "local",
+      "permissions": ["read workspace files"]
+    },
+    "maintainer": { "name": "Example", "status": "active" },
+    "support": {
+      "docsUrl": "https://example.com/fixture-skill/docs",
+      "channels": [
+        { "label": "Issues", "url": "https://example.com/fixture-skill/issues" }
+      ]
+    },
+    "alternatives": [
+      {
+        "category": "skills",
+        "slug": "superpowers",
+        "reason": "Same category, broader scope"
+      }
+    ]
+  },
+  "categoryDetails": {
+    "skills": {
+      "format": "markdown + frontmatter",
+      "allowedTools": ["read", "write"]
+    }
+  },
+  "evidence": {
+    "facts": [
+      {
+        "field": "details.setup",
+        "sourceUrl": "https://example.com/fixture-skill/docs",
+        "observedAt": "2026-01-10",
+        "attribution": "publisher"
+      }
+    ],
+    "verification": {
+      "checkedAt": "2026-02-01",
+      "fields": ["details.setup"],
+      "method": "Ran the documented install command in a clean container"
+    }
+  }
+}
