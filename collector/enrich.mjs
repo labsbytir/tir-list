@@ -28,7 +28,16 @@ function proxyUrlFor(session) {
     );
     process.exit(1);
   }
-  const u = new URL(raw);
+  const normalized = /^[a-z]+:\/\//i.test(raw) ? raw : `http://${raw}`;
+  let u;
+  try {
+    u = new URL(normalized);
+  } catch {
+    console.error(
+      "WEBSHARE_PROXY is not a valid URL. Expected http://username:password@host:port"
+    );
+    process.exit(1);
+  }
   const user = u.username
     ? `${u.username}-session-${session}`
     : `session-${session}`;
