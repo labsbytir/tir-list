@@ -50,6 +50,16 @@ const hasGraphs =
     <a href={`/llms/${category}-${entry.slug}.txt`}>llms.txt</a>
   </div>
 
+  {entry.install ? (
+    <div class="side-card" style="margin-bottom:1.5rem">
+      <header>{entry.install.label}</header>
+      <div class="body">
+        <pre class="cmd">{entry.install.command}</pre>
+        <button class="btn-copy" data-copy={entry.install.command}>Copy command</button>
+      </div>
+    </div>
+  ) : null}
+
   <div class="layout">
     <div>
       <section class="block">

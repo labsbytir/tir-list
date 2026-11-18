@@ -1,0 +1,98 @@
+---
+import Site from "../layouts/Site.astro";
+import { allEntries, categories } from "../lib/catalog";
+
+export const prerender = true;
+
+const embedded = allEntries.map((e) => ({
+  key: `${e.category}:${e.slug}`,
+  name: e.name,
+  description: e.description,
+  url: e.url,
+  tags: e.tags,
+  category: e.category,
+  stars: typeof e.stats?.stars === "number" ? e.stats.stars : null,
+  license: e.stats?.license || null,
+  updated: e.stats?.pushedAt || e.stats?.fetchedAt || null,
+  links: e.links || {},
+  releases: (e.releases || []).length,
+}));
+---
+
+<Site
+  title="Compare — tir-list"
+  description="Compare two catalog entries side by side."
+  categories={categories.map((c) => ({ id: c.id, label: c.label }))}
+>
+  <div class="hero">
+    <p class="crumbs"><a href="/">Catalog</a> / Compare</p>
+    <h1>Compare</h1>
+    <p>Pick two entries to compare side by side.</p>
+  </div>
+
+  <div class="controls">
+    <select id="pickA" aria-label="First entry"></select>
+    <select id="pickB" aria-label="Second entry"></select>
+    <button class="btn-copy" id="goBtn" style="width:auto;margin:0">Compare</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script define:vars={{ embedded }}>
+    const $ = (id) => document.getElementById(id);
+    const byKey = Object.fromEntries(embedded.map((e) => [e.key, e]));
+
+    for (const sel of [$("pickA"), $("pickB")]) {
+      for (const e of embedded) {
+        const o = document.createElement("option");
+        o.value = e.key;
+        o.textContent = `${e.name} (${e.category})`;
+        sel.appendChild(o);
+      }
+    }
+
+    function row(label, a, b) {
+      return `<tr><th>${label}</th><td>${a}</td><td>${b}</td></tr>`;
+    }
+    function fmtLinks(e) {
+      return [e.url && `<a href="${e.url}">Visit</a>`, e.links.github && `<a href="${e.links.github}">GitHub</a>`, e.links.docs && `<a href="${e.links.docs}">Docs</a>`, e.links.website && `<a href="${e.links.website}">Website</a>`]
+        .filter(Boolean)
+        .join(" · ");
+    }
+
+    function render() {
+      const p = new URLSearchParams(location.search);
+      const a = byKey[p.get("a")];
+      const b = byKey[p.get("b")];
+      if (!a || !b) {
+        document.getElementById("result").innerHTML =
+          "<p style='color:var(--muted)'>Choose two entries above, or open a shared link like <code>?a=skills/superpowers&b=agents/claude-code</code>.</p>";
+        return;
+      }
+      $("pickA").value = p.get("a");
+      $("pickB").value = p.get("b");
+      document.getElementById("result").innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:0.875rem">
+        <tr><th></th><th style="text-align:left">${a.name}</th><th style="text-align:left">${b.name}</th></tr>
+        ${row("Description", a.description, b.description)}
+        ${row("Category", a.category, b.category)}
+        ${row("Stars", a.stars ?? "—", b.stars ?? "—")}
+        ${row("License", a.license ?? "—", b.license ?? "—")}
+        ${row("Updated", (a.updated || "—").slice(0, 10), (b.updated || "—").slice(0, 10))}
+        ${row("Tags", a.tags.join(", "), b.tags.join(", "))}
+        ${row("Releases tracked", a.releases, b.releases)}
+        ${row("Links", fmtLinks(a), fmtLinks(b))}
+        </table>`;
+    }
+
+    document.getElementById("goBtn").addEventListener("click", () => {
+      location.search = `?a=${$("pickA").value}&b=${$("pickB").value}`;
+    });
+    render();
+  </script>
+
+  <style>
+    table th, table td { border: 1px solid var(--black-forest); padding: 0.5rem 0.75rem; vertical-align: top; }
+    table th { color: var(--muted); text-align: left; font-weight: 600; }
+    table td { color: var(--mist); }
+  </style>
+</Site>

@@ -20,7 +20,14 @@ const { categories } = Astro.props as { categories: Category[] };
 {
   categories.flatMap((c) =>
     c.items.map((item) => (
-      <article class="card" data-cat={c.id} data-key={`${c.id}:${item.slug}`}>
+      <article
+        class="card"
+        data-cat={c.id}
+        data-key={`${c.id}:${item.slug}`}
+        data-name={item.name.toLowerCase()}
+        data-stars={item.stats?.stars ?? ""}
+        data-updated={(item.stats?.pushedAt || item.stats?.fetchedAt || "") as string}
+      >
         <h3 class="card-title">
           <a href={`/${c.id}/${item.slug}`}>{item.name}</a>
         </h3>

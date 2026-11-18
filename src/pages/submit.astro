@@ -1,0 +1,69 @@
+---
+import Site from "../layouts/Site.astro";
+import { categories } from "../lib/catalog";
+
+export const prerender = true;
+---
+
+<Site
+  title="Submit a tool — tir-list"
+  description="Submit a new catalog entry via pull request."
+  categories={categories.map((c) => ({ id: c.id, label: c.label }))}
+>
+  <div class="hero">
+    <p class="crumbs"><a href="/">Catalog</a> / Submit</p>
+    <h1>Submit a tool</h1>
+    <p>Fill in the fields — a GitHub tab opens with the file prefilled, ready to propose.</p>
+  </div>
+
+  <section class="block" style="max-width:640px">
+    <div class="controls" style="flex-direction:column;align-items:stretch">
+      <select id="f-cat" aria-label="Category">
+        {categories.map((c) => (
+          <option value={c.id}>{c.label}</option>
+        ))}
+      </select>
+      <input id="f-slug" placeholder="slug (kebab-case)" aria-label="Slug" />
+      <input id="f-name" placeholder="Name" aria-label="Name" />
+      <input id="f-desc" placeholder="One-line description" aria-label="Description" />
+      <input id="f-url" placeholder="https://… (tool home)" aria-label="URL" />
+      <input id="f-tags" placeholder="tags, comma, separated" aria-label="Tags" />
+      <input id="f-website" placeholder="Website URL (optional)" aria-label="Website" />
+      <input id="f-docs" placeholder="Docs URL (optional)" aria-label="Docs" />
+      <input id="f-github" placeholder="GitHub URL (optional)" aria-label="GitHub" />
+      <input id="f-install" placeholder="Install command (optional)" aria-label="Install command" />
+      <button class="btn-copy" id="f-go">Open prefilled PR →</button>
+    </div>
+    <p id="f-err" style="color:var(--malachite)"></p>
+  </section>
+
+  <script>
+    document.getElementById("f-go").addEventListener("click", () => {
+      const v = (id) => document.getElementById(id).value.trim();
+      const err = document.getElementById("f-err");
+      const slug = v("f-slug"), name = v("f-name"), desc = v("f-desc"), url = v("f-url");
+      if (!slug || !name || !desc || !url) {
+        err.textContent = "Slug, name, description, and URL are required.";
+        return;
+      }
+      if (!/^https?:\/\//.test(url)) {
+        err.textContent = "URL must start with http(s).";
+        return;
+      }
+      const cat = v("f-cat");
+      const links = {};
+      if (v("f-website")) links.website = v("f-website");
+      if (v("f-docs")) links.docs = v("f-docs");
+      if (v("f-github")) links.github = v("f-github");
+      const entry = {
+        slug, name, description: desc, url,
+        tags: v("f-tags").split(",").map((t) => t.trim()).filter(Boolean),
+      };
+      if (Object.keys(links).length) entry.links = links;
+      if (v("f-install")) entry.install = { label: "Install", command: v("f-install") };
+      const path = `catalog/${cat}/${slug}.json`;
+      const gh = `https://github.com/labsbytir/tir-list/new/main?filename=${encodeURIComponent(path)}&value=${encodeURIComponent(JSON.stringify(entry, null, 2))}`;
+      window.open(gh, "_blank", "noopener");
+    });
+  </script>
+</Site>

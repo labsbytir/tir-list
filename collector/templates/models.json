@@ -10,5 +10,9 @@
     "website": "https://example.com/",
     "docs": "https://example.com/docs",
     "github": "https://github.com/example/repo"
+  },
+  "install": {
+    "label": "Package manager",
+    "command": "<install-command>"
   }
 }

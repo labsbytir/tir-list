@@ -39,6 +39,16 @@ for (const category of readdirSync(root).sort()) {
     }
     if (typeof e?.url === "string" && !/^https?:\/\//.test(e.url))
       fail(`${where}: "url" must start with http(s)`);
+    if (e?.install !== undefined) {
+      if (typeof e.install !== "object" || e.install === null || Array.isArray(e.install)) {
+        fail(`${where}: "install" must be an object`);
+      } else {
+        for (const k of ["label", "command"]) {
+          if (typeof e.install[k] !== "string" || !e.install[k].trim())
+            fail(`${where}: install.${k} must be a non-empty string`);
+        }
+      }
+    }
     if (e?.links !== undefined) {
       if (
         typeof e.links !== "object" ||

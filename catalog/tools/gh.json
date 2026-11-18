@@ -6,5 +6,9 @@
   "tags": [
     "tools",
     "cli"
-  ]
+  ],
+  "install": {
+    "label": "Homebrew",
+    "command": "brew install gh"
+  }
 }
