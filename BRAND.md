@@ -14,6 +14,15 @@ Forest-green palette for tir-list. Site theme lives in `src/pages/index.astro` (
 
 Plus `--mist: #d7efe0` (derived light text) and `--muted: #8fb8a0` (derived muted text).
 
+## Logos
+
+Stored in `public/brand/` (served as site assets), recorded here as the brand kit:
+
+- `tirlist-white.svg` — white wordmark, for dark backgrounds. Used in the site header.
+- `tirlist-black.svg` — black wordmark, for light backgrounds.
+
+Both are the "tirLIST" wordmark with a pixel-brick motif in lime accent `#c9ef79`. Do not recolor the lime bricks; pair the white lockup with dark surfaces and the black lockup with light surfaces.
+
 ## CSS
 
 ```css
