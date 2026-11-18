@@ -1,0 +1,10 @@
+{
+  "slug": "gh",
+  "name": "GitHub CLI",
+  "description": "GitHub on the command line: PRs, issues, and repos.",
+  "url": "https://cli.github.com/",
+  "tags": [
+    "tools",
+    "cli"
+  ]
+}

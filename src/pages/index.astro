@@ -1,19 +1,46 @@
 ---
 import CatalogGrid from "../components/CatalogGrid.astro";
 import CategoryChart from "../components/CategoryChart.tsx";
-import skills from "../data/skills.json";
-import mcpServers from "../data/mcp-servers.json";
-import aiModels from "../data/ai-models.json";
-import linuxFlavors from "../data/linux-flavors.json";
 
 export const prerender = true;
 
-const categories = [
-  { id: "skills", label: "Skills", items: skills },
-  { id: "mcp-servers", label: "MCP Servers", items: mcpServers },
-  { id: "ai-models", label: "AI Models", items: aiModels },
-  { id: "linux-flavors", label: "Linux Flavors", items: linuxFlavors },
-];
+interface Entry {
+  slug: string;
+  name: string;
+  description: string;
+  url: string;
+  tags: string[];
+}
+
+const labels: Record<string, string> = {
+  skills: "Skills",
+  models: "Models",
+  containers: "Containers",
+  servers: "Servers",
+  agents: "Agents",
+  tools: "Tools",
+};
+
+const order = ["skills", "models", "containers", "servers", "agents", "tools"];
+
+const modules = import.meta.glob("../../catalog/*/*.json", { eager: true }) as Record<
+  string,
+  { default: Entry }
+>;
+
+const byCategory = new Map<string, Entry[]>();
+for (const [path, mod] of Object.entries(modules)) {
+  const id = path.split("/").slice(-2, -1)[0];
+  if (!byCategory.has(id)) byCategory.set(id, []);
+  byCategory.get(id)!.push(mod.default);
+}
+for (const items of byCategory.values()) {
+  items.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const categories = order
+  .filter((id) => byCategory.has(id))
+  .map((id) => ({ id, label: labels[id], items: byCategory.get(id)! }));
 
 const repo = "https://github.com/labsbytir/tir-list";
 const cloneCmd = `git clone ${repo}.git`;
@@ -26,7 +53,7 @@ const forkCmd = "gh repo fork labsbytir/tir-list --clone";
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="tir-list — a catalog of modern web tools. Find Skills, MCP Servers, AI Models and Linux flavors."
+      content="tir-list — a catalog of modern web tools. Find Skills, Models, Containers, Servers, Agents and Tools."
     />
     <title>tir-list — modern web tools catalog</title>
     <style>
@@ -238,7 +265,7 @@ const forkCmd = "gh repo fork labsbytir/tir-list --clone";
       <div class="hero">
         <p class="crumbs">Catalog / All tools</p>
         <h1>tir-list</h1>
-        <p>A catalog of modern web tools. Find Skills, MCP Servers, AI Models and Linux flavors.</p>
+        <p>A catalog of modern web tools. Find Skills, Models, Containers, Servers, Agents and Tools.</p>
       </div>
 
       <div class="controls">

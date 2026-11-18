@@ -1,0 +1,10 @@
+{
+  "slug": "superpowers",
+  "name": "Superpowers",
+  "description": "Agent skills for brainstorming, systematic debugging, and plan execution.",
+  "url": "https://github.com/obra/superpowers",
+  "tags": [
+    "skills",
+    "agents"
+  ]
+}

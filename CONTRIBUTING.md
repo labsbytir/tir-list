@@ -6,12 +6,14 @@ Add a tool to the catalog by forking and opening a pull request.
 
 1. Fork this repo, then clone your fork.
 2. Create a branch: `git checkout -b add-<tool-slug>`.
-3. Add your entry to the right file under `src/data/`:
-   - `skills.json` — Skills
-   - `mcp-servers.json` — MCP Servers
-   - `ai-models.json` — AI Models
-   - `linux-flavors.json` — Linux Flavors
-4. Entry schema (`slug` is unique within its file):
+3. Add one file per entry under `catalog/`:
+   - `catalog/skills/<slug>.json` — Skills
+   - `catalog/models/<slug>.json` — Models
+   - `catalog/containers/<slug>.json` — Containers
+   - `catalog/servers/<slug>.json` — Servers
+   - `catalog/agents/<slug>.json` — Agents
+   - `catalog/tools/<slug>.json` — Tools
+4. Entry schema (the filename must match `slug`, which is unique within its folder):
 
    ```json
    {

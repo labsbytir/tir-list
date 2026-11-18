@@ -1,6 +1,6 @@
 ## New entry
 
-- Category file (`src/data/*.json`):
+- New file (`catalog/<category>/<slug>.json`):
 - Entry slug:
 
 ## Checklist

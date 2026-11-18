@@ -1,0 +1,10 @@
+{
+  "slug": "claude-code",
+  "name": "Claude Code",
+  "description": "Anthropic's agentic coding tool that lives in the terminal.",
+  "url": "https://github.com/anthropics/claude-code",
+  "tags": [
+    "agents",
+    "coding"
+  ]
+}
