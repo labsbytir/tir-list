@@ -13,7 +13,8 @@
     "generate:llms": "node scripts/generate-llms.mjs",
     "sync:bosbase": "node scripts/sync-bosbase.mjs",
     "collect": "node collector/collect.mjs",
-    "collect:enrich": "node collector/enrich.mjs"
+    "collect:enrich": "node collector/enrich.mjs",
+    "collect:health": "node collector/health.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.8",
@@ -21,8 +22,12 @@
     "@electric-sql/pglite": "^0.5.16",
     "@electric-sql/pglite-pgvector": "^0.0.17",
     "@electric-sql/pglite-socket": "^0.2.19",
+    "@fuma-comment/react": "^1.6.0",
+    "@fuma-comment/server": "^1.6.0",
     "astro": "^7.4.12",
     "flexsearch": "^0.8.212",
+    "hono": "^4.13.19",
+    "lucide-react": "^1.75.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "recharts": "^3.11.0",

@@ -2,6 +2,7 @@
 node_modules/
 .astro/
 .wrangler/
+collector/health.json
 data/
 .opencode/index/
 .codebase-index/

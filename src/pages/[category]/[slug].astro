@@ -1,6 +1,7 @@
 ---
 import Site from "../../layouts/Site.astro";
 import ActivityHeatmap from "../../components/ActivityHeatmap.astro";
+import Discussion from "../../components/Comments.tsx";
 import { StarsHistory, ViewsHistory } from "../../components/RepoCharts.tsx";
 import { categories, labels } from "../../lib/catalog";
 
@@ -109,6 +110,11 @@ const hasGraphs =
           <pre class="code changelog">{entry.changelog.excerpt}</pre>
         </section>
       ) : null}
+
+      <section class="block">
+        <h2>Discussion</h2>
+        <Discussion client:visible page={`${category}/${entry.slug}`} />
+      </section>
     </div>
     <aside>
       <div class="side-card">
