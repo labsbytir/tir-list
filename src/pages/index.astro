@@ -5,10 +5,15 @@ import { categories } from "../lib/catalog";
 
 export const prerender = true;
 
-const repo = "https://github.com/labsbytir/tir-list";
-const cloneCmd = `git clone ${repo}.git`;
-const forkCmd = "gh repo fork labsbytir/tir-list --clone";
-const allTags = [...new Set(categories.flatMap((c) => c.items.flatMap((e) => e.tags)))].sort();
+const all = categories.flatMap((c) => c.items.map((item) => ({ ...item, cat: c.id, label: c.label })));
+const columns = [
+  { title: "Today's top MCP servers", items: all.filter((i) => i.cat === "servers") },
+  { title: "Most downloaded skills", items: all.filter((i) => i.cat === "skills") },
+  { title: "Models", items: all.filter((i) => i.cat === "models") },
+  { title: "Agents", items: all.filter((i) => i.cat === "agents") },
+  { title: "Tools", items: all.filter((i) => i.cat === "tools") },
+  { title: "Containers", items: all.filter((i) => i.cat === "containers") },
+].filter((c) => c.items.length);
 ---
 
 <Site
@@ -17,172 +22,89 @@ const allTags = [...new Set(categories.flatMap((c) => c.items.flatMap((e) => e.t
   categories={categories}
   filterNav
 >
-  <div class="hero">
-    <p class="crumbs">Catalog / All tools</p>
-    <h1>tir-list</h1>
-    <p>A catalog of modern web tools. Find Skills, Models, Containers, Servers, Agents and Tools.</p>
-  </div>
-
-  <div class="controls">
-    <input id="q" type="search" placeholder="Search tools…" autocomplete="off" aria-label="Search tools" />
-    <select id="tagSel" aria-label="Filter by tag">
-      <option value="">All tags</option>
-      {allTags.map((t) => (
-        <option value={t}>{t}</option>
-      ))}
-    </select>
-    <input id="starsMin" type="number" min="0" placeholder="Min ★" aria-label="Minimum stars" />
-    <select id="sortSel" aria-label="Sort order">
-      <option value="relevance">Relevance</option>
-      <option value="name">Name</option>
-      <option value="stars">Stars</option>
-      <option value="updated">Updated</option>
-    </select>
-    <div class="pills" id="tabs">
-      <button data-cat-link="all" class="active">All</button>
-      {categories.map((c) => <button data-cat-link={c.id}>{c.label}</button>)}
-    </div>
-  </div>
-
-  <div class="grid" id="grid">
-    <CatalogGrid categories={categories} />
-  </div>
-  <div class="layout">
-    <div></div>
-    <aside>
-      <div class="side-card">
-        <header>Add your tool</header>
-        <div class="body">
-          <ol>
-            <li>Fork the repo</li>
-            <li>Add an entry to <code>catalog/&lt;category&gt;/&lt;slug&gt;.json</code></li>
-            <li>Open a pull request</li>
-          </ol>
-          <pre class="cmd">{forkCmd}</pre>
-          <button class="btn-copy" data-copy={forkCmd}>Copy fork command</button>
-          <pre class="cmd">{cloneCmd}</pre>
-          <button class="btn-copy" data-copy={cloneCmd}>Copy clone command</button>
-          <p style="margin:0.5rem 0 0;font-size:0.75rem;color:var(--muted)">
-            See <a href={`${repo}/blob/main/CONTRIBUTING.md`}>CONTRIBUTING</a> for the entry schema.
-          </p>
-        </div>
+  <section class="hero-search">
+    <canvas id="drift" aria-hidden="true"></canvas>
+    <div class="hero-copy">
+      <h1>Where you go<br />for tools.</h1>
+      <p>Find skills, models, containers, servers, agents and tools.</p>
+      <form class="search-pill" action="#grid">
+        <input id="q" type="search" placeholder="Search by name" autocomplete="off" aria-label="Search tools" />
+        <button type="submit">Search</button>
+      </form>
+      <div class="hero-links">
+        <a href="/leaderboard">Best tools</a>
+        <a href="/trending">Trending</a>
       </div>
-      <div class="side-card">
-        <header>Generative art</header>
-        <div class="body">
-          <p style="margin:0;color:var(--muted);font-size:0.8rem">
-            <a href="/art.html">Verdant Drift</a> — seeded p5.js spores in brand
-            greens. New seed every visit to the seed box.
-          </p>
-        </div>
-      </div>
-      <div class="side-card">
-        <header>Categories</header>
-        <div class="body">
-          {categories.map((c) => (
-            <button class="cat-row" data-cat-link={c.id}>
-              <span>{c.label}</span>
-              <span class="count">{c.items.length} tools</span>
-            </button>
+      <div class="marquee" id="marquee">
+        <div>
+          {all.concat(all).map((item) => (
+            <a href={`/${item.cat}/${item.slug}`}>{item.name}</a>
           ))}
         </div>
       </div>
-    </aside>
+    </div>
+  </section>
+
+  <div class="columns" id="grid">
+    {columns.map((col) => (
+      <section>
+        <h2>{col.title}</h2>
+        <CatalogGrid categories={[{ id: col.items[0].cat, label: col.title, items: col.items }]} />
+      </section>
+    ))}
   </div>
 
   <script>
-    import { Document } from "flexsearch";
+    const c = document.getElementById("drift");
+    const ctx = c.getContext("2d");
+    const seed = 20261118;
+    let s = seed;
+    const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    const spores = Array.from({ length: 180 }, () => ({ x: rnd(), y: rnd(), a: rnd() * 6.28 }));
+    function frame() {
+      const r = c.getBoundingClientRect();
+      c.width = r.width;
+      c.height = r.height;
+      ctx.fillStyle = "rgba(2,2,2,0.18)";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.fillStyle = "#16db65";
+      for (const p of spores) {
+        p.a += 0.01;
+        p.x += Math.cos(p.a) * 0.0015;
+        p.y += Math.sin(p.a) * 0.0015;
+        if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1) { p.x = rnd(); p.y = rnd(); }
+        ctx.fillRect(p.x * c.width, p.y * c.height, 1.5, 1.5);
+      }
+      requestAnimationFrame(frame);
+    }
+    frame();
 
     const q = document.getElementById("q");
-    const grid = document.getElementById("grid");
-    const tagSel = document.getElementById("tagSel");
-    const starsMin = document.getElementById("starsMin");
-    const sortSel = document.getElementById("sortSel");
-    const validCats = new Set(
-      [...document.querySelectorAll("#tabs [data-cat-link]")].map((b) => b.dataset.catLink)
-    );
-    let cat = validCats.has(location.hash.slice(1)) ? location.hash.slice(1) : "all";
-    let keyOf = new Map();
-    let index = buildIndex();
-
-    function buildIndex() {
-      const idx = new Document({
-        tokenize: "forward",
-        document: { id: "id", index: "text" },
-      });
-      keyOf = new Map();
-      let id = 0;
-      for (const el of grid.children) {
-        if (!el.dataset || !el.dataset.key) continue;
-        id += 1;
-        keyOf.set(el.dataset.key, id);
-        idx.add({ id, text: el.textContent || "" });
-      }
-      return idx;
-    }
-
-    function syncActive() {
-      for (const b of document.querySelectorAll("[data-cat-link]")) {
-        b.classList.toggle("active", b.dataset.catLink === cat);
-      }
-    }
-
-    function apply() {
-      const needle = (q.value || "").trim();
-      const tag = tagSel.value;
-      const minStars = Number(starsMin.value || 0);
-      const sort = sortSel.value;
-      let hits = null;
-      if (needle) {
-        hits = new Set();
-        const found = index.search(needle, { suggest: true });
-        for (const group of found) {
-          for (const id of group.result) hits.add(id);
-        }
-      }
-      const shown = [];
-      for (const el of grid.children) {
-        if (!el.dataset || !el.dataset.key) continue;
-        const okCat = cat === "all" || el.dataset.cat === cat;
-        const okQ = !hits || hits.has(keyOf.get(el.dataset.key));
-        const okTag = !tag || (el.textContent || "").toLowerCase().includes("#" + tag.toLowerCase());
-        const stars = el.dataset.stars === "" ? 0 : Number(el.dataset.stars);
-        const okStars = stars >= minStars;
-        const visible = okCat && okQ && okTag && okStars;
-        el.style.display = visible ? "" : "none";
-        if (visible) shown.push(el);
-      }
-      if (sort !== "relevance") {
-        shown.sort((a, b) => {
-          if (sort === "name") return (a.dataset.name || "").localeCompare(b.dataset.name || "");
-          if (sort === "stars") return Number(b.dataset.stars || 0) - Number(a.dataset.stars || 0);
-          return (b.dataset.updated || "").localeCompare(a.dataset.updated || "");
-        });
-        for (const el of shown) grid.appendChild(el);
-      }
-    }
-
-    // Re-index when the deferred server island swaps in its content.
-    new MutationObserver(() => {
-      index = buildIndex();
-      apply();
-    }).observe(grid, { childList: true });
-
-    document.addEventListener("click", (e) => {
-      const link = e.target.closest("[data-cat-link]");
-      if (link) {
-        cat = link.dataset.catLink;
-        syncActive();
-        apply();
-        return;
+    q.addEventListener("input", () => {
+      const term = q.value.toLowerCase();
+      for (const card of document.querySelectorAll("#grid .card")) {
+        card.style.display = card.dataset.name.includes(term) ? "" : "none";
       }
     });
-
-    syncActive();
-    apply();
-    q.addEventListener("input", apply);
-    tagSel.addEventListener("change", apply);
-    starsMin.addEventListener("input", apply);
-    sortSel.addEventListener("change", apply);
   </script>
 </Site>
+
+<style is:global>
+  .hero-search { position: relative; min-height: 70vh; display: grid; place-items: center; overflow: hidden; margin: 0 -1rem; }
+  #drift { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero-copy { position: relative; text-align: center; width: min(680px, 92%); }
+  .hero-copy h1 { font-family: ui-monospace, monospace; font-size: clamp(2.4rem, 6vw, 4.5rem); line-height: 1; color: var(--mist); margin: 0 0 1rem; }
+  .hero-copy p { color: var(--muted); margin: 0 0 1.5rem; }
+  .search-pill { display: flex; background: var(--black); border: 1px solid var(--sea-green); border-radius: 999px; padding: 0.35rem; }
+  .search-pill input { flex: 1; background: transparent; border: 0; color: var(--mist); padding: 0.7rem 1rem; font-size: 1rem; outline: none; }
+  .search-pill button { background: var(--sea-green); color: var(--black); border: 0; border-radius: 999px; padding: 0.7rem 1.4rem; font-weight: 700; }
+  .hero-links { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+  .hero-links a { border: 1px solid var(--black-forest); border-radius: 999px; padding: 0.4rem 0.9rem; color: var(--mist); text-decoration: none; font-size: 0.85rem; }
+  .marquee { overflow: hidden; margin-top: 1.5rem; }
+  .marquee div { display: flex; gap: 0.5rem; width: max-content; animation: slide 40s linear infinite; }
+  .marquee a { border: 1px solid var(--sea-green); border-radius: 999px; padding: 0.3rem 0.7rem; color: var(--mist); text-decoration: none; font-size: 0.8rem; white-space: nowrap; }
+  @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2rem; }
+  .columns h2 { font-size: 1rem; margin: 0 0 0.75rem; }
+  @media (max-width: 900px) { .columns { grid-template-columns: 1fr; } }
+</style>
