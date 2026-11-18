@@ -87,6 +87,16 @@ export default function Discussion({ page }: { page: string }) {
           },
         }}
       />
+      <p
+        style={{
+          fontSize: "0.75rem",
+          color: "var(--muted)",
+          marginTop: "0.5rem",
+        }}
+      >
+        No account needed — max 500 characters, posts with links are held for
+        review.
+      </p>
       <ReportBox page={page} />
     </>
   );

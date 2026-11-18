@@ -14,14 +14,14 @@ async function ensureColumns(): Promise<void> {
 
 const BANNED =
   /\b(viagra|cialis|casino|porn|xxx|bitcoin doubler|double your crypto|free money fast)\b/i;
+const LINK_PATTERN =
+  /https?:\/\/|www\.|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|io|dev|org|net|app|ai|co|xyz|site|online|me|so|to)\b/i;
 
-export function moderate(
-  text: string,
-  links: number
-): { flagged: boolean; reason?: string } {
-  if (links > 3) return { flagged: true, reason: "too many links" };
+export function moderate(text: string): { flagged: boolean; reason?: string } {
+  if (text.length > 500) return { flagged: true, reason: "too long" };
+  if (LINK_PATTERN.test(text))
+    return { flagged: true, reason: "link held for review" };
   if (BANNED.test(text)) return { flagged: true, reason: "banned pattern" };
-  if (text.length > 2000) return { flagged: true, reason: "too long" };
   const letters = text.replace(/[^a-zA-Z]/g, "");
   if (
     letters.length > 50 &&
@@ -166,8 +166,7 @@ export const commentsStorage = {
     await ensureColumns();
     const db = await getDb();
     const text = textOf(options.body.content);
-    const linkCount = (text.match(/https?:\/\//g) || []).length;
-    let mod = moderate(text, linkCount);
+    let mod = moderate(text);
     if (!mod.flagged) {
       const dup = await db.query<{ n: string }>(
         `SELECT count(*) AS n FROM comments WHERE page = $1 AND author = $2 AND content = $3 AND timestamp > now() - interval '24 hours'`,
@@ -197,10 +196,11 @@ export const commentsStorage = {
 
   async updateComment(options: { id: string; body: { content: unknown } }) {
     const db = await getDb();
-    await db.query(`UPDATE comments SET content = $1 WHERE id = $2`, [
-      JSON.stringify(options.body.content),
-      Number(options.id),
-    ]);
+    const mod = moderate(textOf(options.body.content));
+    await db.query(
+      `UPDATE comments SET content = $1, flagged = flagged OR $2 WHERE id = $3`,
+      [JSON.stringify(options.body.content), mod.flagged, Number(options.id)]
+    );
   },
 
   async deleteComment(options: { id: string }) {
