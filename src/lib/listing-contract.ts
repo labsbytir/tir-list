@@ -45,7 +45,148 @@ const isISODate = (v: unknown): v is string => {
 const isFutureDate = (v: unknown): boolean =>
   isISODate(v) && Date.parse(v) > Date.now();
 
-// Non-exhaustive: flags obvious live secrets. Manual review still required.
+// Credential-bearing assignments (key: value or key=value) anywhere in
+// authored config/command/example text. Independent of SECRET_PATTERNS:
+// even an unprefixed live value such as "Bearer abc123" must fail.
+const CREDENTIAL_ASSIGN_SRC =
+  "[\"']?(authorization|api[-_ ]?key|client[-_ ]?secret|passwd|password|secret|token|bearer)[\"']?\\s*[:=]\\s*[\"']?([^\"'}\\n]+)";
+function isPlaceholderValue(v: string): boolean {
+  if (/<[^<>]+>/.test(v)) return true;
+  const t = v.toLowerCase();
+  if (/(example|changeme|placeholder|x{3,}|\*{3,}|dummy|sample)/.test(t))
+    return true;
+  return /your/.test(t) && /(token|key|password|secret)/.test(t);
+}
+function checkCredentialPlaceholders(
+  errs: string[],
+  where: string,
+  path: string,
+  v: unknown
+): void {
+  if (typeof v !== "string") return;
+  for (const m of v.matchAll(new RegExp(CREDENTIAL_ASSIGN_SRC, "gi"))) {
+    if (!isPlaceholderValue(m[2].trim()))
+      errs.push(
+        `${where}: "${path}" assigns "${m[1]}" a live-looking value; use a named placeholder`
+      );
+  }
+}
+
+// Verified install deep links for supported clients. Scope: validating
+// authored examples only; links are never inferred or generated.
+// - Editor extensions: vscode:extension/<publisher>.<name>,
+//   cursor:extension/<publisher>.<name>.
+// - MCP servers: the officially documented Cursor install link only
+//   (https://cursor.com/docs/context/mcp/install-links):
+//   cursor://anysphere.cursor-deeplink/mcp/install?name=$NAME&config=$BASE64.
+//   No vscode:mcp target is documented; none is guessed.
+const EXTENSION_INSTALL_LINK =
+  /^(vscode|cursor):extension\/[a-z0-9][a-z0-9-_]*\.[a-z0-9][a-z0-9-_]*$/i;
+const BASE64_STRICT = /^[A-Za-z0-9+/\-_]*={0,2}$/;
+
+function validateCursorMcpLink(
+  errs: string[],
+  where: string,
+  path: string,
+  value: string
+): void {
+  let u: URL;
+  try {
+    u = new URL(value);
+  } catch {
+    errs.push(`${where}: "${path}" is not a parseable Cursor install link`);
+    return;
+  }
+  if (
+    u.protocol !== "cursor:" ||
+    u.hostname !== "anysphere.cursor-deeplink" ||
+    u.pathname !== "/mcp/install"
+  ) {
+    errs.push(
+      `${where}: "${path}" must be cursor://anysphere.cursor-deeplink/mcp/install`
+    );
+    return;
+  }
+  // Split the raw query: URLSearchParams turns base64 "+" into spaces.
+  const params = new Map<string, string[]>();
+  for (const part of u.search.slice(1).split("&")) {
+    if (!part) continue;
+    const eq = part.indexOf("=");
+    const k = eq < 0 ? part : part.slice(0, eq);
+    const v = eq < 0 ? "" : part.slice(eq + 1);
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(v);
+    } catch {
+      errs.push(`${where}: "${path}" has a malformed query encoding`);
+      return;
+    }
+    params.set(k, [...(params.get(k) ?? []), decoded]);
+  }
+  for (const k of params.keys()) {
+    if (k !== "name" && k !== "config")
+      errs.push(`${where}: "${path}" rejects unknown parameter "${k}"`);
+  }
+  const names = params.get("name") ?? [];
+  const configs = params.get("config") ?? [];
+  if (names.length !== 1 || !names[0].trim())
+    errs.push(`${where}: "${path}" needs exactly one nonempty name`);
+  if (configs.length !== 1 || !configs[0])
+    errs.push(`${where}: "${path}" needs exactly one nonempty config`);
+  if (errs.length) return;
+  const raw = configs[0];
+  if (!BASE64_STRICT.test(raw) || raw.length % 4 !== 0) {
+    errs.push(`${where}: "${path}" config is not valid base64`);
+    return;
+  }
+  let config: unknown;
+  try {
+    config = JSON.parse(Buffer.from(raw, "base64").toString("utf8"));
+  } catch {
+    errs.push(`${where}: "${path}" config is not valid JSON`);
+    return;
+  }
+  if (typeof config !== "object" || config === null || Array.isArray(config)) {
+    errs.push(`${where}: "${path}" config must be a JSON object`);
+    return;
+  }
+  const c = config as Record<string, unknown>;
+  if (c.url !== undefined) {
+    if (!isHttpUrl(c.url))
+      errs.push(
+        `${where}: "${path}" config url must be http(s) without credentials`
+      );
+  }
+  if (c.command !== undefined && !isNonEmptyString(c.command))
+    errs.push(`${where}: "${path}" config command must be a non-empty string`);
+  if (c.args !== undefined) {
+    if (
+      !Array.isArray(c.args) ||
+      !c.args.every((a) => typeof a === "string" && a.trim())
+    )
+      errs.push(
+        `${where}: "${path}" config args must be an array of non-empty strings`
+      );
+  }
+  if (c.env !== undefined) {
+    if (
+      typeof c.env !== "object" ||
+      c.env === null ||
+      Array.isArray(c.env) ||
+      !Object.values(c.env).every((v) => typeof v === "string")
+    )
+      errs.push(`${where}: "${path}" config env must be an object of strings`);
+  }
+  if (c.url === undefined && c.command === undefined)
+    errs.push(`${where}: "${path}" config needs a url or a command`);
+  const text = JSON.stringify(c);
+  if (looksLikeSecret(text))
+    errs.push(
+      `${where}: "${path}" config looks like a live secret; use a placeholder`
+    );
+  checkCredentialPlaceholders(errs, where, `${path} config`, text);
+}
+// Known live-secret prefixes. Complements the credential-key rule above.
 const SECRET_PATTERNS: RegExp[] = [
   /ghp_[A-Za-z0-9]+/,
   /github_pat_[A-Za-z0-9_]+/,
@@ -144,12 +285,25 @@ function checkSetup(errs: string[], where: string, s: unknown): void {
           ins.kind !== "link"
         )
           errs.push(`${where}: "${p}.kind" has an unknown value`);
-        if (ins.kind === "link" && !isHttpUrl(ins.value))
-          errs.push(`${where}: "${p}.value" link must start with http(s)`);
+        if (ins.kind === "link" && typeof ins.value === "string") {
+          const http: boolean = isHttpUrl(ins.value);
+          if (http) {
+            // Public content URL.
+          } else if (EXTENSION_INSTALL_LINK.test(ins.value)) {
+            // Documented editor extension install target.
+          } else if (ins.value.startsWith("cursor://")) {
+            validateCursorMcpLink(errs, where, `${p}.value`, ins.value);
+          } else {
+            errs.push(
+              `${where}: "${p}.value" link must be http(s) or an allowlisted install deep link`
+            );
+          }
+        }
         if (looksLikeSecret(ins.value))
           errs.push(
             `${where}: "${p}.value" looks like a live secret; use a placeholder`
           );
+        checkCredentialPlaceholders(errs, where, `${p}.value`, ins.value);
         if (!isHttpUrl(ins.sourceUrl))
           errs.push(`${where}: "${p}.sourceUrl" must start with http(s)`);
       });
@@ -167,11 +321,21 @@ function checkSetup(errs: string[], where: string, s: unknown): void {
         errs.push(
           `${where}: "details.setup.example.input" must be a non-empty string`
         );
-      for (const k of ["input", "output", "environment"])
+      for (const k of ["output", "environment"])
+        if (s.example[k] !== undefined && typeof s.example[k] !== "string")
+          errs.push(`${where}: "details.setup.example.${k}" must be a string`);
+      for (const k of ["input", "output", "environment"]) {
         if (s.example[k] !== undefined && looksLikeSecret(s.example[k]))
           errs.push(
             `${where}: "details.setup.example.${k}" looks like a live secret; use a placeholder`
           );
+        checkCredentialPlaceholders(
+          errs,
+          where,
+          `details.setup.example.${k}`,
+          s.example[k]
+        );
+      }
     }
   }
 }
@@ -823,9 +987,40 @@ export function validateCategoryDetails(
   return errs;
 }
 
-export function validateEvidence(where: string, value: unknown): string[] {
+// Curated metadata the collectors must never destroy. Used by the real
+// write paths in collector/collect.mjs (dedup merge and --overwrite).
+export function restoreCuratedFields<T>(merged: T, existing: unknown): T {
+  if (!isRecord(merged) || !isRecord(existing)) return merged;
+  const out = { ...(merged as Record<string, unknown>) };
+  for (const k of ["details", "categoryDetails", "evidence"]) {
+    if (k in existing) out[k] = existing[k];
+  }
+  return out as T;
+}
+
+// Every addressable path in an entry, including indexed array rows
+// (details.cost.plans[0]). Evidence field references must name one.
+export function collectEntryPaths(entry: unknown): Set<string> {
+  const paths = new Set<string>();
+  const walk = (v: unknown, p: string): void => {
+    if (p) paths.add(p);
+    if (Array.isArray(v)) v.forEach((item, i) => walk(item, `${p}[${i}]`));
+    else if (isRecord(v))
+      for (const [k, child] of Object.keys(v).map((k) => [k, v[k]] as const))
+        walk(child, p ? `${p}.${k}` : k);
+  };
+  walk(entry, "");
+  return paths;
+}
+
+export function validateEvidence(
+  where: string,
+  value: unknown,
+  entry?: unknown
+): string[] {
   const errs: string[] = [];
   if (!isRecord(value)) return [`${where}: "evidence" must be an object`];
+  const paths = entry === undefined ? null : collectEntryPaths(entry);
   keys(errs, where, "evidence.", value, [
     "facts",
     "verification",
@@ -851,6 +1046,8 @@ export function validateEvidence(where: string, value: unknown): string[] {
         ]);
         if (!isNonEmptyString(f.field))
           errs.push(`${where}: "${p}.field" must be a non-empty string`);
+        else if (paths !== null && !paths.has(f.field as string))
+          errs.push(`${where}: "${p}.field" names no path in this entry`);
         if (!isHttpUrl(f.sourceUrl))
           errs.push(`${where}: "${p}.sourceUrl" must start with http(s)`);
         if (!isISODate(f.observedAt))
@@ -895,6 +1092,10 @@ export function validateEvidence(where: string, value: unknown): string[] {
             errs.push(
               `${where}: "evidence.verification.fields[${i}]" must be a non-empty string`
             );
+          else if (paths !== null && !paths.has(f as string))
+            errs.push(
+              `${where}: "evidence.verification.fields[${i}]" names no path in this entry`
+            );
         });
       if (!isNonEmptyString(v.method))
         errs.push(
@@ -926,6 +1127,8 @@ export function validateEvidence(where: string, value: unknown): string[] {
           errs.push(`${where}: "${p}.sourceUrl" must start with http(s)`);
         if (!isISODate(s.checkedAt))
           errs.push(`${where}: "${p}.checkedAt" must be an ISO date`);
+        else if (isFutureDate(s.checkedAt))
+          errs.push(`${where}: "${p}.checkedAt" must not be in the future`);
         if (!isNonEmptyString(s.target))
           errs.push(`${where}: "${p}.target" must be a non-empty string`);
         if (!isNonEmptyString(s.result))
@@ -972,6 +1175,8 @@ export function validateEvidence(where: string, value: unknown): string[] {
           errs.push(`${where}: "${p}.sourceUrl" must start with http(s)`);
         if (!isISODate(b.measuredAt))
           errs.push(`${where}: "${p}.measuredAt" must be an ISO date`);
+        else if (isFutureDate(b.measuredAt))
+          errs.push(`${where}: "${p}.measuredAt" must not be in the future`);
         if (!isHttpUrl(b.methodologyUrl))
           errs.push(`${where}: "${p}.methodologyUrl" must start with http(s)`);
         if (b.configuration !== undefined && !isNonEmptyString(b.configuration))

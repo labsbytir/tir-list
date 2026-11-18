@@ -156,7 +156,7 @@ for (const category of readdirSync(root).sort()) {
       ))
         fail(msg);
     if (e?.evidence !== undefined)
-      for (const msg of validateEvidence(where, e.evidence)) fail(msg);
+      for (const msg of validateEvidence(where, e.evidence, e)) fail(msg);
   }
 }
 

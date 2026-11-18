@@ -4,6 +4,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  collectEntryPaths,
+  restoreCuratedFields,
   validateCategoryDetails,
   validateDetails,
   validateEvidence,
@@ -64,7 +66,10 @@ for (const category of categories) {
       ),
       []
     );
-    assert.deepEqual(validateEvidence(`${category}/fixture`, e.evidence), []);
+    assert.deepEqual(
+      validateEvidence(`${category}/fixture`, e.evidence, e),
+      []
+    );
   });
 }
 
@@ -313,6 +318,273 @@ test("alternatives resolve against the catalog slug index", () => {
   assert.match(many.join("\n"), /at most 4/);
 });
 
+test("credential-bearing assignments need placeholders, any prefix", () => {
+  for (const value of [
+    '{"headers": {"Authorization": "Bearer abc123"}}',
+    '{"token": "abc123"}',
+    "password=s3cr3t-live-value",
+    "apiKey: abc123",
+  ]) {
+    const errs = validateDetails(
+      "t",
+      {
+        setup: {
+          instructions: [
+            {
+              label: "x",
+              target: "y",
+              kind: "configuration",
+              value,
+              sourceUrl: "https://example.com/d",
+            },
+          ],
+        },
+      },
+      slugs
+    );
+    assert.match(errs.join("\n"), /live-looking value/, value);
+  }
+  for (const value of [
+    '{"token": "<YOUR_TOKEN>"}',
+    '{"headers": {"Authorization": "Bearer <API_TOKEN>"}}',
+    "password: <DB_PASSWORD>",
+    "apiKey: YOUR_API_KEY",
+  ]) {
+    const errs = validateDetails(
+      "t",
+      {
+        setup: {
+          instructions: [
+            {
+              label: "x",
+              target: "y",
+              kind: "configuration",
+              value,
+              sourceUrl: "https://example.com/d",
+            },
+          ],
+        },
+      },
+      slugs
+    );
+    assert.deepEqual(errs, [], value);
+  }
+});
+
+test("evidence source URLs reject embedded credentials", () => {
+  const errs = validateEvidence(
+    "t",
+    {
+      facts: [
+        {
+          field: "details.setup",
+          sourceUrl: "https://user:pass@example.com/report",
+          observedAt: "2026-01-10",
+          attribution: "publisher",
+        },
+      ],
+    },
+    {
+      slug: "x",
+      details: { setup: { difficulty: "beginner" } },
+    }
+  );
+  assert.match(errs.join("\n"), /must start with http\(s\)/);
+});
+
+test("example output and environment must be strings", () => {
+  const bad = validateDetails(
+    "t",
+    {
+      setup: {
+        example: {
+          input: "do x",
+          output: { text: "done" },
+          environment: 42,
+        },
+      },
+    },
+    slugs
+  );
+  assert.match(
+    bad.join("\n"),
+    /"details\.setup\.example\.output" must be a string/
+  );
+  assert.match(
+    bad.join("\n"),
+    /"details\.setup\.example\.environment" must be a string/
+  );
+});
+
+test("evidence paths must exist in the entry, indexed rows included", () => {
+  const entry = {
+    slug: "x",
+    details: { setup: { difficulty: "beginner" } },
+  };
+  const badField = validateEvidence(
+    "t",
+    {
+      facts: [
+        {
+          field: "details.nonexistent",
+          sourceUrl: "https://example.com/d",
+          observedAt: "2026-01-10",
+          attribution: "publisher",
+        },
+      ],
+    },
+    entry
+  );
+  assert.match(badField.join("\n"), /names no path in this entry/);
+  const badVerification = validateEvidence(
+    "t",
+    {
+      verification: {
+        checkedAt: "2026-02-01",
+        fields: ["details.setup", "details.pricing"],
+        method: "manual",
+      },
+    },
+    entry
+  );
+  assert.match(badVerification.join("\n"), /names no path in this entry/);
+  const good = validateEvidence(
+    "t",
+    {
+      facts: [
+        {
+          field: "details.setup",
+          sourceUrl: "https://example.com/d",
+          observedAt: "2026-01-10",
+          attribution: "publisher",
+        },
+      ],
+      verification: {
+        checkedAt: "2026-02-01",
+        fields: ["details.setup"],
+        method: "manual",
+      },
+    },
+    entry
+  );
+  assert.deepEqual(good, []);
+});
+
+test("security and benchmark dates reject the future", () => {
+  const entry = { slug: "x" };
+  const bad = validateEvidence(
+    "t",
+    {
+      security: [
+        {
+          type: "scan",
+          sourceUrl: "https://example.com/s",
+          checkedAt: "2999-01-01",
+          target: "v1",
+          result: "clean",
+        },
+      ],
+      benchmarks: [
+        {
+          metric: "m",
+          value: 80,
+          scale: "0-100",
+          sourceUrl: "https://example.com/b",
+          measuredAt: "2999-06-01",
+          target: "v1",
+          methodologyUrl: "https://example.com/m",
+        },
+      ],
+    },
+    entry
+  );
+  assert.match(
+    bad.join("\n"),
+    /"evidence\.security\[0\]\.checkedAt" must not be in the future/
+  );
+  assert.match(
+    bad.join("\n"),
+    /"evidence\.benchmarks\[0\]\.measuredAt" must not be in the future/
+  );
+});
+
+test("install deep links: extensions and Cursor MCP install form", () => {
+  const mcp = (config: unknown, extra = ""): string => {
+    const b64 = Buffer.from(JSON.stringify(config)).toString("base64");
+    return `cursor://anysphere.cursor-deeplink/mcp/install?name=Fixture&config=${encodeURIComponent(b64)}${extra}`;
+  };
+  const linkErrs = (value: string): string[] =>
+    validateDetails(
+      "t",
+      {
+        setup: {
+          instructions: [
+            {
+              label: "x",
+              target: "y",
+              kind: "link",
+              value,
+              sourceUrl: "https://example.com/d",
+            },
+          ],
+        },
+      },
+      slugs
+    );
+  for (const value of [
+    "vscode:extension/publisher.name",
+    "cursor:extension/pub-1.my_tool",
+    mcp({ url: "https://mcp.example.com/sse" }),
+    mcp({
+      command: "npx",
+      args: ["-y", "example-mcp"],
+      env: { API_KEY: "<YOUR_KEY>" },
+    }),
+  ]) {
+    assert.deepEqual(linkErrs(value), [], value);
+  }
+  const live = Buffer.from(
+    JSON.stringify({
+      url: "https://mcp.example.com",
+      headers: { Authorization: "Bearer abc123" },
+    })
+  ).toString("base64");
+  const cases: Array<[string, RegExp]> = [
+    ["vscode://file/x", /allowlisted install deep link/],
+    ["myapp://install/x", /allowlisted install deep link/],
+    ["vscode:extension/noid", /allowlisted install deep link/],
+    [
+      "cursor://anysphere.cursor-deeplink/other?name=F&config=e30=",
+      /must be cursor:\/\/anysphere\.cursor-deeplink\/mcp\/install/,
+    ],
+    [
+      "cursor://anysphere.cursor-deeplink/mcp/install?name=F&config=!!!",
+      /not valid base64/,
+    ],
+    [
+      `cursor://anysphere.cursor-deeplink/mcp/install?name=F&config=${Buffer.from("not json").toString("base64")}`,
+      /not valid JSON/,
+    ],
+    [
+      `cursor://anysphere.cursor-deeplink/mcp/install?name=A&name=B&config=${Buffer.from("{}").toString("base64")}`,
+      /exactly one nonempty name/,
+    ],
+    [
+      "cursor://anysphere.cursor-deeplink/mcp/install?name=F",
+      /exactly one nonempty config/,
+    ],
+    [mcp({ env: { FOO: "bar" } }), /needs a url or a command/],
+    [mcp({ url: "https://u:p@mcp.example.com/" }), /without credentials/],
+    [
+      `cursor://anysphere.cursor-deeplink/mcp/install?name=F&config=${encodeURIComponent(live)}`,
+      /live-looking value/,
+    ],
+  ];
+  for (const [value, re] of cases) {
+    assert.match(linkErrs(value).join("\n"), re, value);
+  }
+});
+
 test("env vars need descriptions; tool effects stay optional", () => {
   const bad = validateCategoryDetails("t", "containers", {
     containers: { environment: [{ name: "TOKEN" }] },
@@ -327,29 +599,69 @@ test("env vars need descriptions; tool effects stay optional", () => {
   assert.deepEqual(good, []);
 });
 
-test("collector refresh preserves curated metadata", () => {
-  // Mirrors the collector contract: refresh overwrites only collector-owned
-  // keys, never details / categoryDetails / evidence.
-  const before = fixture("containers.complete.json");
-  const refreshed = structuredClone(before);
-  const owned: Record<string, unknown> = {
-    stats: { stars: 42 },
-    releases: [],
-    repo: "example/fixture",
+test("collector overwrite preserves curated fields via production helper", () => {
+  // The same restoreCuratedFields that collector/collect.mjs calls on its
+  // --overwrite write path.
+  const existing = {
+    slug: "fixture-container",
+    description: "Old",
+    details: { cost: { model: "free" } },
+    categoryDetails: { containers: { rootless: false } },
+    evidence: { facts: [] },
   };
-  for (const [k, v] of Object.entries(owned)) {
-    (refreshed as unknown as Record<string, unknown>)[k] = v;
-  }
-  assert.deepEqual(refreshed.details, before.details);
-  assert.deepEqual(refreshed.categoryDetails, before.categoryDetails);
-  assert.deepEqual(refreshed.evidence, before.evidence);
+  const incoming = {
+    slug: "fixture-container",
+    description: "Refreshed from source",
+    stats: { stars: 42 },
+  };
+  const merged = restoreCuratedFields(incoming, existing) as Record<
+    string,
+    unknown
+  >;
+  assert.equal(merged.description, "Refreshed from source");
+  assert.deepEqual(merged.stats, { stars: 42 });
+  assert.deepEqual(merged.details, existing.details);
+  assert.deepEqual(merged.categoryDetails, existing.categoryDetails);
+  assert.deepEqual(merged.evidence, existing.evidence);
 });
 
-test("collectors never assign curated metadata keys", () => {
-  for (const file of ["collector/collect.mjs", "collector/enrich.mjs"]) {
-    const src = readFileSync(join(here, "..", file), "utf8");
-    for (const key of ["details", "categoryDetails", "evidence"]) {
-      assert.doesNotMatch(src, new RegExp(`\\b(entry|cur)\\.${key}\\s*=`));
+test("merge helper never drops incoming curated fields it was not given", () => {
+  const merged = restoreCuratedFields(
+    { slug: "x", details: { cost: { model: "free" } } },
+    { slug: "x", description: "Old" }
+  ) as Record<string, unknown>;
+  assert.deepEqual(merged.details, { cost: { model: "free" } });
+});
+
+test("merge helper composes with collector fill-missing merge", () => {
+  // Mirrors the collect.mjs dedup-merge write path: fill missing
+  // collector-owned keys on a copy of the stored entry, then restore.
+  const stored = {
+    slug: "x",
+    description: "Hand-written",
+    details: { cost: { model: "free" } },
+    links: { website: "https://example.com/x" },
+  };
+  const incoming = {
+    description: "Scraped",
+    links: { github: "https://github.com/example/x" },
+    stats: { stars: 7 },
+  };
+  const cur = JSON.parse(JSON.stringify(stored)) as Record<string, unknown>;
+  for (const k of ["description"]) {
+    if (!cur[k] && (incoming as Record<string, unknown>)[k]) {
+      cur[k] = (incoming as Record<string, unknown>)[k];
     }
   }
+  cur.links = {
+    ...((incoming as Record<string, unknown>).links as Record<string, unknown>),
+    ...((cur.links ?? {}) as Record<string, unknown>),
+  };
+  const written = restoreCuratedFields(cur, stored) as Record<string, unknown>;
+  assert.equal(written.description, "Hand-written");
+  assert.deepEqual(written.details, { cost: { model: "free" } });
+  assert.deepEqual(
+    (written.links as Record<string, unknown>).github,
+    "https://github.com/example/x"
+  );
 });

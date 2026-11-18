@@ -43,6 +43,7 @@ Entries may add `details`, `categoryDetails`, and `evidence` objects (see `opens
 - `categoryDetails` holds only the key matching the entry's folder (`skills`, `agents`, `containers`, `servers`, `models`, or `tools`).
 - Unknown values render as "Not provided"; explicit `false`/`0` render as unsupported/zero, never as missing. Amount `0` still requires `currency` and `unit`.
 - Every `details.setup.instructions` entry requires `sourceUrl`. Screenshot `details.media` entries require `alt`.
+- Install deep links are allowlisted, never generated: editor extensions (`vscode:extension/`, `cursor:extension/`) and Cursor MCP install links in the officially documented form `cursor://anysphere.cursor-deeplink/mcp/install?name=…&config=…` (source: https://cursor.com/docs/context/mcp/install-links). The base64 config must decode to JSON with an HTTP(S) URL or a command/args shape, using placeholders for any credentials — including credentials hidden inside the base64. No `vscode:mcp` target is documented, so none is accepted.
 - Examples use placeholders such as `<YOUR_TOKEN>`; the validator rejects known live-secret patterns, but review is still required.
 - Dates are ISO 8601 and never in the future. Verification identifies the checked fields — a timestamp alone never marks a listing verified.
 - Run `npm run validate:data` (nested rules live in `src/lib/listing-contract.ts`) and `npm run test:contract` before opening a PR.

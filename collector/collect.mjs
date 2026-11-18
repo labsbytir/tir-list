@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { ProxyAgent, fetch as undiciFetch } from "undici";
+import { restoreCuratedFields } from "../src/lib/listing-contract.ts";
 
 const UA = "tir-list-collector/0.1 (+https://github.com/labsbytir/tir-list)";
 const DELAY_MS = 1000;
@@ -473,7 +474,9 @@ async function main() {
       if (hit) {
         dupes++;
         try {
-          const cur = JSON.parse(readFileSync(hit, 'utf8'));
+          const raw = readFileSync(hit, 'utf8');
+          const before = JSON.parse(raw);
+          const cur = JSON.parse(raw);
           let changed = false;
           for (const k of ['description', 'install']) {
             if (!cur[k] && e[k]) { cur[k] = e[k]; changed = true; }
@@ -487,7 +490,7 @@ async function main() {
             if (!cur.stats[k] && e.stats && e.stats[k]) { cur.stats[k] = e.stats[k]; changed = true; }
           }
           if (!cur.weeklyInstalls && e.weeklyInstalls) { cur.weeklyInstalls = e.weeklyInstalls; changed = true; }
-          if (changed) { writeFileSync(hit, JSON.stringify(cur, null, 2) + '\n'); merged++; }
+          if (changed) { writeFileSync(hit, JSON.stringify(restoreCuratedFields(cur, before), null, 2) + '\n'); merged++; }
         } catch {
           continue;
         }
@@ -503,7 +506,18 @@ async function main() {
         skipped++;
         continue;
       }
-      writeFileSync(file, JSON.stringify(e, null, 2) + "\n");
+      let next = e;
+      if (existsSync(file)) {
+        try {
+          next = restoreCuratedFields(
+            e,
+            JSON.parse(readFileSync(file, "utf8"))
+          );
+        } catch {
+          next = e;
+        }
+      }
+      writeFileSync(file, JSON.stringify(next, null, 2) + "\n");
       for (const k of entryUrls(e)) known.set(k, 'NEW');
       written++;
     }
