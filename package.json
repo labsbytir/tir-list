@@ -27,6 +27,7 @@
     "astro": "^7.4.12",
     "flexsearch": "^0.8.212",
     "hono": "^4.13.19",
+    "iovalkey": "^0.4.0",
     "lucide-react": "^1.75.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

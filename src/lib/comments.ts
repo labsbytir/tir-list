@@ -1,4 +1,5 @@
 import { getDb } from "./db.ts";
+import { cached, cacheInvalidatePrefix } from "./cache.ts";
 
 // PGlite-backed storage for @fuma-comment/server. Tables live in src/lib/db.ts
 // (comments, rates, roles). Author/moderation columns are added on first use.
@@ -122,6 +123,7 @@ export const commentsStorage = {
   async report(id: number): Promise<{ reports: number; flagged: boolean }> {
     await ensureColumns();
     const db = await getDb();
+    await cacheInvalidatePrefix("comments:");
     const res = await db.query<{ reports: number; flagged: boolean }>(
       `UPDATE comments SET reports = reports + 1, flagged = (reports + 1) >= 3 OR flagged
        WHERE id = $1 RETURNING reports, flagged`,
@@ -139,23 +141,32 @@ export const commentsStorage = {
   }) {
     await ensureColumns();
     const db = await getDb();
-    const res = await db.query<Row>(
-      `SELECT * FROM comments WHERE page = $1 AND NOT flagged ORDER BY timestamp DESC LIMIT $2`,
-      [options.page, options.limit]
-    );
-    const out = [];
-    for (const row of res.rows) {
-      let liked: boolean | undefined;
-      if (options.auth?.id) {
-        const r = await db.query<{ like: boolean }>(
-          `SELECT "like" FROM rates WHERE "userId" = $1 AND "commentId" = $2`,
-          [options.auth.id, row.id]
-        );
-        if (r.rows[0]) liked = r.rows[0].like;
+    // Personalized (liked flags) responses bypass the cache; anonymous reads are cached 30s.
+    if (options.auth?.id) return read(options, db);
+    return cached(`comments:${options.page}:${options.limit}`, 30, () => read(options, db));
+
+    async function read(
+      opts: { page: string; limit: number; after?: Date; auth?: { id: string } },
+      db: Awaited<ReturnType<typeof getDb>>
+    ) {
+      const res = await db.query<Row>(
+        `SELECT * FROM comments WHERE page = $1 AND NOT flagged ORDER BY timestamp DESC LIMIT $2`,
+        [opts.page, opts.limit]
+      );
+      const out = [];
+      for (const row of res.rows) {
+        let liked: boolean | undefined;
+        if (opts.auth?.id) {
+          const r = await db.query<{ like: boolean }>(
+            `SELECT "like" FROM rates WHERE "userId" = $1 AND "commentId" = $2`,
+            [opts.auth.id, row.id]
+          );
+          if (r.rows[0]) liked = r.rows[0].like;
+        }
+        out.push(await toComment(row, liked));
       }
-      out.push(await toComment(row, liked));
+      return out;
     }
-    return out;
   },
 
   async postComment(options: {
@@ -177,6 +188,7 @@ export const commentsStorage = {
     }
     if (mod.flagged)
       console.warn(`comment held (${mod.reason}) on ${options.page}`);
+    await cacheInvalidatePrefix("comments:");
     const shortName = options.auth.id.replace(/^anon-/, "").slice(0, 8);
     const res = await db.query<Row>(
       `INSERT INTO comments (page, thread, author, author_name, author_image, content, flagged)
@@ -205,6 +217,7 @@ export const commentsStorage = {
 
   async deleteComment(options: { id: string }) {
     const db = await getDb();
+    await cacheInvalidatePrefix("comments:");
     await db.query(`DELETE FROM rates WHERE "commentId" = $1`, [
       Number(options.id),
     ]);
@@ -231,6 +244,7 @@ export const commentsStorage = {
        ON CONFLICT ("userId", "commentId") DO UPDATE SET "like" = EXCLUDED."like"`,
       [options.auth.id, Number(options.id), options.body.like]
     );
+    await cacheInvalidatePrefix("comments:");
   },
 
   async deleteRate(options: { auth: { id: string }; id: string }) {
@@ -239,6 +253,7 @@ export const commentsStorage = {
       `DELETE FROM rates WHERE "userId" = $1 AND "commentId" = $2`,
       [options.auth.id, Number(options.id)]
     );
+    await cacheInvalidatePrefix("comments:");
   },
 
   async getRole() {

@@ -5,7 +5,7 @@ Target: `150.241.230.243`. Staff backend/auth: `https://www.bosbase.com/`.
 ## 1. Base
 
 ```bash
-apt update && apt install -y curl git caddy
+apt update && apt install -y curl git caddy valkey
 curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 apt install -y nodejs
 ```
@@ -35,6 +35,7 @@ After=network.target
 WorkingDirectory=/srv/tir-list
 Environment=NODE_ENV=production
 Environment=PGLITE_DIR=/var/lib/tir-list/pglite
+Environment=VALKEY_URL=redis://127.0.0.1:6379
 Environment=BOSBASE_URL=https://www.bosbase.com
 EnvironmentFile=/srv/tir-list/.env
 ExecStart=/usr/bin/node ./dist/server/entry.mjs
@@ -46,6 +47,7 @@ WantedBy=multi-user.target
 
 ```bash
 mkdir -p /var/lib/tir-list/pglite && chown -R www-data /var/lib/tir-list
+systemctl enable --now valkey
 systemctl enable --now tir-list
 ```
 
@@ -65,7 +67,9 @@ systemctl reload caddy
 
 ## Env
 
-See `.env.example`: `BOSBASE_URL`, `BOSBASE_API_KEY`, `PGLITE_DIR`, `PORT`, `WEBSHARE_PROXY`, `GITHUB_TOKEN`, `OPENROUTER_API_KEY`.
+See `.env.example`: `BOSBASE_URL`, `BOSBASE_API_KEY`, `PGLITE_DIR`, `VALKEY_URL`, `PORT`, `WEBSHARE_PROXY`, `GITHUB_TOKEN`, `OPENROUTER_API_KEY`.
+
+Anonymous comment reads are cached in Valkey for 30s (writes invalidate); without Valkey running the cache fails open to PGlite.
 
 For GitHub Actions, store `WEBSHARE_PROXY` and `OPENROUTER_API_KEY` under repo Settings → Secrets → Actions (`GITHUB_TOKEN` is automatic). The weekly `collector` workflow uses them to refresh listings; no DuckDB involved — listings live as git-tracked JSON, PGlite mirrors them at runtime.
 
