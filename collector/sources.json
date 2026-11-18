@@ -43,6 +43,30 @@
       "limit": 30
     },
     {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/alebcay/awesome-shell/main/README.md",
+      "category": "tools",
+      "limit": 20
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/sdras/awesome-actions/main/README.md",
+      "category": "tools",
+      "limit": 20
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/stevemao/awesome-git-addons/main/README.md",
+      "category": "tools",
+      "limit": 20
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/moul/awesome-ssh/main/README.md",
+      "category": "tools",
+      "limit": 20
+    },
+    {
       "type": "github-topic",
       "topic": "distroless",
       "category": "containers",
@@ -57,6 +81,18 @@
     {
       "type": "awesome-list",
       "url": "https://raw.githubusercontent.com/Friz-zy/awesome-linux-containers/master/README.md",
+      "category": "containers",
+      "limit": 20
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/ramitsurana/awesome-kubernetes/main/README.md",
+      "category": "containers",
+      "limit": 20
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/docker/awesome-compose/main/README.md",
       "category": "containers",
       "limit": 20
     },

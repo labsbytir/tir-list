@@ -266,6 +266,19 @@ export function parsePunkpeyeAwesome(markdown, limit) {
   return out;
 }
 
+async function fetchAwesome(url, session) {
+  try {
+    return await fetchText(url, session);
+  } catch (err) {
+    // Branch-agnostic: try main <-> master swap on failure.
+    const swapped = url.includes("/main/")
+      ? url.replace("/main/", "/master/")
+      : url.replace("/master/", "/main/");
+    if (swapped === url) throw err;
+    return await fetchText(swapped, session);
+  }
+}
+
 async function collectSource(src) {
   const orHeaders = process.env.OPENROUTER_API_KEY
     ? { authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` }
@@ -314,14 +327,14 @@ async function collectSource(src) {
     });
   }
   if (src.type === "awesome-list") {
-    const md = await fetchText(src.url, `awesome-${slugify(src.url)}`);
+    const md = await fetchAwesome(src.url, `awesome-${slugify(src.url)}`);
     return parseAwesome(md, src.limit).map((e) => ({
       ...e,
       tags: [src.category],
     }));
   }
   if (src.type === "awesome-punkpeye") {
-    const md = await fetchText(src.url, `awesome-${slugify(src.url)}`);
+    const md = await fetchAwesome(src.url, `awesome-${slugify(src.url)}`);
     return parsePunkpeyeAwesome(md, src.limit).map((e) => {
       const { section, extraTags, ...rest } = e;
       return {
