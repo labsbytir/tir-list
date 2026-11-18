@@ -1,22 +1,30 @@
 # Proposal
 
 ## Why
-Catalog page renders everything in one static pass; user wants Astro server islands (`server:defer`) so the grid streams in after the shell, per https://docs.astro.build/en/guides/server-islands/.
+
+The home catalog and the listing body render in one static pass, so the shell cannot paint until every card is built. An earlier attempt used `server:defer` and was removed because the island request returned 400 behind Caddy. The site now runs on `@astrojs/node` with `@astrojs/react` already installed, and the catalog still has no deferred island. The shell should paint first and the catalog should fill in after it.
 
 ## What Changes
-- Install `@astrojs/cloudflare` adapter, switch to `output: 'server'` with page prerendered
-- Extract `src/components/CatalogGrid.astro`, render via `<CatalogGrid server:defer>` with fallback content
-- Serializable props only (plain JSON data)
+
+- Render the home catalog columns as one deferred server island, with visible fallback content until the cards arrive.
+- Render the listing body (facts, verdict, pricing, built-with, install) as a React component inside a deferred server island. Charts and the comment thread stay client islands, because they need the browser.
+- Pass only JSON-serializable props across the island boundary.
+- Keep the Node standalone adapter. Do not switch the deploy target.
+- Fix the island response so Caddy does not turn it into a 400. The earlier failure was a cache header the proxy overwrote.
 
 ## Capabilities
 
 ### New Capabilities
-- `catalog-islands`: catalog grid loads as a deferred server island with fallback
+
+- `catalog-islands`: the catalog shell paints immediately and the catalog body arrives as a deferred server island.
 
 ### Modified Capabilities
+
 (none)
 
 ## Impact
-- New dep `@astrojs/cloudflare`; `astro.config.mjs` gains adapter + `output: 'server'`
-- `index.astro` keeps `export const prerender = true` (static shell, deferred island)
-- Deploy target becomes Cloudflare with adapter instead of plain static `dist/`
+
+- `src/pages/index.astro` and `src/pages/[category]/[slug].astro` gain `server:defer` islands. Both pages stay prerendered shells.
+- `src/components/CatalogGrid.astro` becomes the deferred home island. `src/components/Listing.tsx` stays the listing body and moves onto a server island.
+- `@astrojs/react` and `@astrojs/node` stay. No new adapter.
+- Auth, comments, and the collector are untouched.
