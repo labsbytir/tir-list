@@ -1,13 +1,45 @@
 import { getDb } from "./db.ts";
 
 // PGlite-backed storage for @fuma-comment/server. Tables live in src/lib/db.ts
-// (comments, rates, roles). Author display columns are added on first use.
-async function ensureAuthorColumns(): Promise<void> {
+// (comments, rates, roles). Author/moderation columns are added on first use.
+async function ensureColumns(): Promise<void> {
   const db = await getDb();
   await db.exec(`
     ALTER TABLE comments ADD COLUMN IF NOT EXISTS author_name VARCHAR(256);
     ALTER TABLE comments ADD COLUMN IF NOT EXISTS author_image VARCHAR(512);
+    ALTER TABLE comments ADD COLUMN IF NOT EXISTS flagged BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE comments ADD COLUMN IF NOT EXISTS reports INTEGER NOT NULL DEFAULT 0;
   `);
+}
+
+const BANNED =
+  /\b(viagra|cialis|casino|porn|xxx|bitcoin doubler|double your crypto|free money fast)\b/i;
+
+export function moderate(
+  text: string,
+  links: number
+): { flagged: boolean; reason?: string } {
+  if (links > 3) return { flagged: true, reason: "too many links" };
+  if (BANNED.test(text)) return { flagged: true, reason: "banned pattern" };
+  if (text.length > 2000) return { flagged: true, reason: "too long" };
+  const letters = text.replace(/[^a-zA-Z]/g, "");
+  if (
+    letters.length > 50 &&
+    letters.replace(/[^A-Z]/g, "").length / letters.length > 0.7
+  ) {
+    return { flagged: true, reason: "shouting" };
+  }
+  return { flagged: false };
+}
+
+export function textOf(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) return content.map(textOf).join(" ");
+  if (content && typeof content === "object") {
+    const c = content as Record<string, unknown>;
+    return [c.text, c.content].filter(Boolean).map(textOf).join(" ");
+  }
+  return "";
 }
 
 interface Row {
@@ -67,24 +99,48 @@ async function toComment(
   };
 }
 
-// Auth seam: Bosbase handles auth. Until its endpoint is confirmed,
-// sessions resolve to null (read-only) and sign-in redirects to Bosbase.
+// Auth seam: anonymous-first. The API wrapper sets a stable `tir_anon`
+// cookie; getSession reads it. Bosbase sign-in stays as the upgrade path.
+function anonIdFrom(req: {
+  headers: Map<string, string | readonly string[]>;
+}): string | null {
+  const raw = req.headers.get("cookie");
+  const cookie = Array.isArray(raw) ? raw.join(";") : raw || "";
+  const m = cookie.match(/(?:^|;\s*)tir_anon=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
 export const commentsAuth = {
-  getSession: () => null,
+  getSession: (req: { headers: Map<string, string | readonly string[]> }) => {
+    const id = anonIdFrom(req);
+    return id ? { id } : null;
+  },
   getSessionWithRole: () => null,
 };
 
 export const commentsStorage = {
+  async report(id: number): Promise<{ reports: number; flagged: boolean }> {
+    await ensureColumns();
+    const db = await getDb();
+    const res = await db.query<{ reports: number; flagged: boolean }>(
+      `UPDATE comments SET reports = reports + 1, flagged = (reports + 1) >= 3 OR flagged
+       WHERE id = $1 RETURNING reports, flagged`,
+      [id]
+    );
+    if (!res.rows[0]) throw new Error("not found");
+    return res.rows[0];
+  },
+
   async getComments(options: {
     page: string;
     limit: number;
     after?: Date;
     auth?: { id: string };
   }) {
-    await ensureAuthorColumns();
+    await ensureColumns();
     const db = await getDb();
     const res = await db.query<Row>(
-      `SELECT * FROM comments WHERE page = $1 ORDER BY timestamp DESC LIMIT $2`,
+      `SELECT * FROM comments WHERE page = $1 AND NOT flagged ORDER BY timestamp DESC LIMIT $2`,
       [options.page, options.limit]
     );
     const out = [];
@@ -107,17 +163,33 @@ export const commentsStorage = {
     page: string;
     body: { content: unknown; thread?: string };
   }) {
-    await ensureAuthorColumns();
+    await ensureColumns();
     const db = await getDb();
+    const text = textOf(options.body.content);
+    const linkCount = (text.match(/https?:\/\//g) || []).length;
+    let mod = moderate(text, linkCount);
+    if (!mod.flagged) {
+      const dup = await db.query<{ n: string }>(
+        `SELECT count(*) AS n FROM comments WHERE page = $1 AND author = $2 AND content = $3 AND timestamp > now() - interval '24 hours'`,
+        [options.page, options.auth.id, JSON.stringify(options.body.content)]
+      );
+      if (Number(dup.rows[0].n) > 0)
+        mod = { flagged: true, reason: "duplicate" };
+    }
+    if (mod.flagged)
+      console.warn(`comment held (${mod.reason}) on ${options.page}`);
+    const shortName = options.auth.id.replace(/^anon-/, "").slice(0, 8);
     const res = await db.query<Row>(
-      `INSERT INTO comments (page, thread, author, author_name, content)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      `INSERT INTO comments (page, thread, author, author_name, author_image, content, flagged)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       [
         options.page,
         options.body.thread ? Number(options.body.thread) : null,
         options.auth.id,
-        options.auth.id,
+        `anon-${shortName}`,
+        `/api/avatar/${options.auth.id}.svg`,
         JSON.stringify(options.body.content),
+        mod.flagged,
       ]
     );
     return toComment(res.rows[0]);
