@@ -8,11 +8,15 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "validate:data": "node scripts/validate-data.mjs"
+    "validate:data": "node scripts/validate-data.mjs",
+    "sync:bosbase": "node scripts/sync-bosbase.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.8",
     "@astrojs/react": "^7.1.9",
+    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite-pgvector": "^0.0.17",
+    "@electric-sql/pglite-socket": "^0.2.19",
     "astro": "^7.4.12",
     "flexsearch": "^0.8.212",
     "react": "^19.3.1",
