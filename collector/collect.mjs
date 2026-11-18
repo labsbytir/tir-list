@@ -139,6 +139,25 @@ export function parseModelCatalog(json, limit, exclude = [":batch"]) {
         pricingPrompt: m.pricing?.prompt,
         pricingCompletion: m.pricing?.completion,
         modalities: m.architecture?.modality,
+        releasedAt: m.created
+          ? new Date(m.created * 1000).toISOString().slice(0, 10)
+          : null,
+        knowledgeCutoff: m.knowledge_cutoff || null,
+        maxOutput: m.top_provider?.max_completion_tokens ?? null,
+        moderated: m.top_provider?.is_moderated ?? null,
+        parameters: Array.isArray(m.supported_parameters)
+          ? m.supported_parameters
+          : [],
+        endpoints: Array.isArray(m.endpoints) ? m.endpoints : [],
+        reasoning: m.reasoning
+          ? {
+              mandatory: !!m.reasoning.mandatory,
+              defaultEffort: m.reasoning.default_effort || null,
+              efforts: Array.isArray(m.reasoning.supported_efforts)
+                ? m.reasoning.supported_efforts
+                : [],
+            }
+          : null,
       },
       benchmarks: m.benchmarks || null,
     }));

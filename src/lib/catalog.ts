@@ -1,3 +1,21 @@
+export interface ModelSpecs {
+  contextLength?: number;
+  pricingPrompt?: string;
+  pricingCompletion?: string;
+  modalities?: string;
+  releasedAt?: string | null;
+  knowledgeCutoff?: string | null;
+  maxOutput?: number | null;
+  moderated?: boolean | null;
+  parameters?: string[];
+  endpoints?: string[];
+  reasoning?: {
+    mandatory?: boolean;
+    defaultEffort?: string | null;
+    efforts?: string[];
+  } | null;
+}
+
 export interface Entry {
   slug: string;
   name: string;
@@ -24,7 +42,7 @@ export interface Entry {
     weeks?: { date: string; count: number; uniques: number }[];
   };
   permaslug?: string;
-  specs?: Record<string, string | number | null>;
+  specs?: ModelSpecs;
   benchmarks?: Record<string, unknown> | null;
   usageHistory?: { date: string; tokens: number }[];
 }

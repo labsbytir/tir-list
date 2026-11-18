@@ -93,12 +93,67 @@ const hasGraphs =
         <section class="block">
           <h2>Specs</h2>
           <div class="release">
-            {entry.specs.contextLength ? <p>Context: <strong>{Number(entry.specs.contextLength).toLocaleString()}</strong> tokens</p> : null}
-            {entry.specs.pricingPrompt ? <p>Pricing: <strong>${entry.specs.pricingPrompt}</strong> / prompt 1M · <strong>${entry.specs.pricingCompletion}</strong> / completion 1M</p> : null}
             {entry.specs.modalities ? <p>Modalities: {entry.specs.modalities}</p> : null}
+            {entry.specs.contextLength ? <p>Context: <strong>{Number(entry.specs.contextLength).toLocaleString()}</strong> tokens</p> : null}
+            {entry.specs.maxOutput ? <p>Max output: <strong>{Number(entry.specs.maxOutput).toLocaleString()}</strong> tokens</p> : null}
+            {entry.specs.pricingPrompt ? <p>Pricing: <strong>${entry.specs.pricingPrompt}</strong> / prompt 1M · <strong>${entry.specs.pricingCompletion}</strong> / completion 1M</p> : null}
+            {entry.specs.releasedAt ? <p>Released: {entry.specs.releasedAt}</p> : null}
+            {entry.specs.knowledgeCutoff ? <p>Knowledge cutoff: {entry.specs.knowledgeCutoff}</p> : null}
+            {entry.specs.moderated !== undefined && entry.specs.moderated !== null ? <p>Moderated: {entry.specs.moderated ? "yes" : "no"}</p> : null}
+            {entry.specs.parameters?.length ? <p>Parameters: {entry.specs.parameters.join(", ")}</p> : null}
+            {entry.specs.endpoints?.length ? <p>Endpoints: {entry.specs.endpoints.join(", ")}</p> : null}
+            {entry.specs.reasoning ? <p>Reasoning: {entry.specs.reasoning.mandatory ? "always on" : "optional"}{entry.specs.reasoning.defaultEffort ? ` (default ${entry.specs.reasoning.defaultEffort})` : ""}{entry.specs.reasoning.efforts?.length ? ` — ${entry.specs.reasoning.efforts.join(", ")}` : ""}</p> : null}
           </div>
         </section>
       ) : null}
+
+      {entry.specs && (entry.specs.contextLength || entry.specs.modalities || entry.specs.releasedAt) ? (
+        <section class="block">
+          <h2>FAQ</h2>
+          {entry.specs.contextLength ? (
+            <details class="release">
+              <summary>What is the context length of {entry.name}?</summary>
+              <p>{Number(entry.specs.contextLength).toLocaleString()} tokens.</p>
+            </details>
+          ) : null}
+          {entry.specs.modalities ? (
+            <details class="release">
+              <summary>What inputs and outputs does {entry.name} support?</summary>
+              <p>{entry.specs.modalities}</p>
+            </details>
+          ) : null}
+          {entry.specs.releasedAt ? (
+            <details class="release">
+              <summary>When was {entry.name} released?</summary>
+              <p>{entry.specs.releasedAt}{entry.specs.knowledgeCutoff ? ` (knowledge cutoff ${entry.specs.knowledgeCutoff})` : ""}.</p>
+            </details>
+          ) : null}
+        </section>
+      ) : null}
+
+      {(() => {
+        const vendor = (entry.permaslug || "").split("/")[0];
+        const siblings = vendor
+          ? categories
+              .flatMap((c) => c.items.map((i) => ({ item: i, category: c.id })))
+              .filter((s) => s.item.permaslug && s.item.permaslug.startsWith(vendor + "/") && s.item.slug !== entry.slug)
+              .slice(0, 4)
+          : [];
+        if (!siblings.length) return null;
+        return (
+          <section class="block">
+            <h2>More from {vendor}</h2>
+            <div class="grid">
+              {siblings.map((s) => (
+                <article class="card">
+                  <h3 class="card-title"><a href={`/${s.category}/${s.item.slug}`}>{s.item.name}</a></h3>
+                  <p class="card-desc">{s.item.description}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {entry.benchmarks?.artificial_analysis || entry.benchmarks?.design_arena?.length ? (
         <section class="block">
