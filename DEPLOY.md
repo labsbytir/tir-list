@@ -65,7 +65,9 @@ systemctl reload caddy
 
 ## Env
 
-See `.env.example`: `BOSBASE_URL`, `BOSBASE_API_KEY`, `PGLITE_DIR`, `PORT`.
+See `.env.example`: `BOSBASE_URL`, `BOSBASE_API_KEY`, `PGLITE_DIR`, `PORT`, `WEBSHARE_PROXY`, `GITHUB_TOKEN`, `OPENROUTER_API_KEY`.
+
+For GitHub Actions, store `WEBSHARE_PROXY` and `OPENROUTER_API_KEY` under repo Settings → Secrets → Actions (`GITHUB_TOKEN` is automatic). The weekly `collector` workflow uses them to refresh listings; no DuckDB involved — listings live as git-tracked JSON, PGlite mirrors them at runtime.
 
 ## Notes
 
