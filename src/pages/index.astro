@@ -90,12 +90,12 @@ const columns = [
 </Site>
 
 <style is:global>
-  .hero-search { position: relative; min-height: 70vh; display: grid; place-items: center; overflow: hidden; margin: 0 -1rem; }
+  .hero-search { position: relative; min-height: 70vh; display: grid; place-items: center; overflow: hidden; }
   #drift { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .hero-copy { position: relative; text-align: center; width: min(680px, 92%); }
-  .hero-copy h1 { font-family: ui-monospace, monospace; font-size: clamp(2.4rem, 6vw, 4.5rem); line-height: 1; color: var(--mist); margin: 0 0 1rem; }
+  .hero-copy { position: relative; text-align: center; width: 100%; max-width: 640px; padding: 0 1rem; box-sizing: border-box; }
+  .hero-copy h1 { font-family: ui-monospace, monospace; font-size: clamp(1.8rem, 9vw, 4.5rem); line-height: 1.05; color: var(--mist); margin: 0 0 1rem; }
   .hero-copy p { color: var(--muted); margin: 0 0 1.5rem; }
-  .search-pill { display: flex; background: var(--black); border: 1px solid var(--sea-green); border-radius: 999px; padding: 0.35rem; }
+  .search-pill { display: flex; background: var(--black); border: 1px solid var(--sea-green); border-radius: 999px; padding: 0.35rem; max-width: 100%; }
   .search-pill input { flex: 1; background: transparent; border: 0; color: var(--mist); padding: 0.7rem 1rem; font-size: 1rem; outline: none; }
   .search-pill button { background: var(--sea-green); color: var(--black); border: 0; border-radius: 999px; padding: 0.7rem 1.4rem; font-weight: 700; }
   .hero-links { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
