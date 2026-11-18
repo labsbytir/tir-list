@@ -1,0 +1,9 @@
+[
+  {
+    "slug": "wolfi",
+    "name": "Wolfi",
+    "description": "Chainguard minimal Linux for containers.",
+    "url": "https://wolfi.dev/",
+    "tags": ["linux", "containers"]
+  }
+]

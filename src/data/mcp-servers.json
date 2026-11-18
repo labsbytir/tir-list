@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "n8n-mcp",
+    "name": "n8n MCP",
+    "description": "Workflow automation via MCP.",
+    "url": "https://n8n.io/",
+    "tags": ["mcp", "automation"]
+  },
+  {
+    "slug": "zapier-mcp",
+    "name": "Zapier MCP",
+    "description": "9,000+ apps via Zapier tools.",
+    "url": "https://zapier.com/",
+    "tags": ["mcp", "integrations"]
+  }
+]
