@@ -1,0 +1,7 @@
+{
+  "slug": "my-tool",
+  "name": "My Tool",
+  "description": "One line on what the tool does.",
+  "url": "https://example.com/",
+  "tags": ["tools", "cli"]
+}

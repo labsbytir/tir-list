@@ -1,0 +1,7 @@
+{
+  "slug": "my-model",
+  "name": "My Model",
+  "description": "One line on what the model is for.",
+  "url": "https://example.com/",
+  "tags": ["models"]
+}

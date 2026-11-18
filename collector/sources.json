@@ -1,0 +1,46 @@
+{
+  "sources": [
+    {
+      "type": "github-topic",
+      "topic": "mcp",
+      "category": "servers",
+      "limit": 20
+    },
+    {
+      "type": "github-topic",
+      "topic": "ai-agents",
+      "category": "agents",
+      "limit": 20
+    },
+    {
+      "type": "github-topic",
+      "topic": "llm",
+      "category": "models",
+      "limit": 20
+    },
+    {
+      "type": "github-topic",
+      "topic": "cli",
+      "category": "tools",
+      "limit": 20
+    },
+    {
+      "type": "github-topic",
+      "topic": "distroless",
+      "category": "containers",
+      "limit": 20
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/travisvn/awesome-claude-skills/main/README.md",
+      "category": "skills",
+      "limit": 30
+    },
+    {
+      "type": "awesome-list",
+      "url": "https://raw.githubusercontent.com/punkpeye/awesome-mcp-servers/main/README.md",
+      "category": "servers",
+      "limit": 30
+    }
+  ]
+}

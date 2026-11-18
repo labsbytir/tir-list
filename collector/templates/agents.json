@@ -1,0 +1,7 @@
+{
+  "slug": "my-agent",
+  "name": "My Agent",
+  "description": "One line on what the agent does.",
+  "url": "https://example.com/",
+  "tags": ["agents"]
+}
