@@ -1,0 +1,5 @@
+# tir-list / tools / gh
+
+GitHub on the command line: PRs, issues, and repos.
+
+url: https://cli.github.com/

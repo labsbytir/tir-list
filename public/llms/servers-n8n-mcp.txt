@@ -1,0 +1,5 @@
+# tir-list / servers / n8n-mcp
+
+Workflow automation via MCP.
+
+url: https://n8n.io/

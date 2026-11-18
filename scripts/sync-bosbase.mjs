@@ -15,15 +15,7 @@ for (const category of readdirSync(root).sort()) {
     const e = JSON.parse(
       readFileSync(join(root.pathname, category, file), "utf8")
     );
-    entries.push({
-      slug: e.slug,
-      category,
-      name: e.name,
-      description: e.description,
-      url: e.url,
-      tags: e.tags,
-      links: e.links || {},
-    });
+    entries.push({ ...e, category });
   }
 }
 

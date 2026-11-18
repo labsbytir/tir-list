@@ -15,8 +15,6 @@ export function bosbaseConfig(): { base: string; key: string | null } {
   };
 }
 
-// Endpoint path is an assumption until the Bosbase API is confirmed:
-// expected: POST {base}/api/listings with Bearer key, body { listings: [...] }.
 export async function pushListings(entries: RemoteListing[]): Promise<void> {
   const { base, key } = bosbaseConfig();
   if (!key) {

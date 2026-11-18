@@ -1,0 +1,5 @@
+# tir-list / skills / agents-md
+
+Convention for AGENTS.md agent instructions.
+
+url: https://agents.md/

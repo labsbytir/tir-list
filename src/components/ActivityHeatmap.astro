@@ -1,0 +1,58 @@
+---
+interface Week {
+  week: number;
+  days: number[];
+  total: number;
+}
+
+interface Props {
+  activity: Week[];
+}
+
+const { activity } = Astro.props as Props;
+const weeks = activity.slice(-52);
+const max = Math.max(1, ...weeks.flatMap((w) => w.days));
+
+function level(n: number): string {
+  const t = n / max;
+  if (n === 0) return "#0d2818";
+  if (t < 0.25) return "#04471c";
+  if (t < 0.5) return "#058c42";
+  if (t < 0.75) return "#16db65";
+  return "#d7efe0";
+}
+
+const rows = [0, 1, 2, 3, 4, 5, 6];
+---
+
+<div class="heatmap" role="img" aria-label="Daily commit activity">
+  {
+    rows.map((d) => (
+      <div class="heat-row">
+        {weeks.map((w, i) => (
+          <span class="heat-cell" title={`${w.days[d]} commits`} style={`background:${level(w.days[d] || 0)}`} />
+        ))}
+      </div>
+    ))
+  }
+</div>
+<p class="heat-note">Daily commits, last {weeks.length} weeks.</p>
+
+<style>
+  .heatmap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+  }
+  .heat-row { display: flex; gap: 3px; }
+  .heat-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: block;
+    flex: none;
+  }
+  .heat-note { font-size: 0.75rem; color: var(--muted); margin: 0.25rem 0 0; }
+</style>

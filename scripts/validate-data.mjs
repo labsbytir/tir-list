@@ -28,24 +28,65 @@ for (const category of readdirSync(root).sort()) {
       continue;
     }
     for (const field of ["slug", "name", "description", "url"]) {
-      if (typeof e?.[field] !== "string" || !e[field].trim()) fail(`${where}: missing or empty "${field}"`);
+      if (typeof e?.[field] !== "string" || !e[field].trim())
+        fail(`${where}: missing or empty "${field}"`);
     }
-    if (!Array.isArray(e?.tags) || !e.tags.every((t) => typeof t === "string" && t.trim())) {
+    if (
+      !Array.isArray(e?.tags) ||
+      !e.tags.every((t) => typeof t === "string" && t.trim())
+    ) {
       fail(`${where}: "tags" must be a non-empty array of strings`);
     }
-    if (typeof e?.url === "string" && !/^https?:\/\//.test(e.url)) fail(`${where}: "url" must start with http(s)`);
+    if (typeof e?.url === "string" && !/^https?:\/\//.test(e.url))
+      fail(`${where}: "url" must start with http(s)`);
     if (e?.links !== undefined) {
-      if (typeof e.links !== "object" || e.links === null || Array.isArray(e.links)) {
+      if (
+        typeof e.links !== "object" ||
+        e.links === null ||
+        Array.isArray(e.links)
+      ) {
         fail(`${where}: "links" must be an object`);
       } else {
         for (const [k, v] of Object.entries(e.links)) {
-          if (!["website", "docs", "github"].includes(k)) fail(`${where}: unknown links key "${k}"`);
-          else if (typeof v !== "string" || !/^https?:\/\//.test(v)) fail(`${where}: links.${k} must start with http(s)`);
+          if (!["website", "docs", "github"].includes(k))
+            fail(`${where}: unknown links key "${k}"`);
+          else if (typeof v !== "string" || !/^https?:\/\//.test(v))
+            fail(`${where}: links.${k} must start with http(s)`);
         }
       }
     }
+    if (e?.repo !== undefined && !/^[^/\s]+\/[^/\s]+$/.test(e.repo))
+      fail(`${where}: "repo" must look like "owner/name"`);
+    if (e?.stats !== undefined) {
+      for (const k of ["stars", "forks", "watchers", "openIssues"]) {
+        if (e.stats[k] !== undefined && typeof e.stats[k] !== "number")
+          fail(`${where}: stats.${k} must be a number`);
+      }
+      for (const k of ["license", "pushedAt", "fetchedAt"]) {
+        if (e.stats[k] !== undefined && typeof e.stats[k] !== "string")
+          fail(`${where}: stats.${k} must be a string`);
+      }
+    }
+    if (e?.statsHistory !== undefined) {
+      if (!Array.isArray(e.statsHistory))
+        fail(`${where}: "statsHistory" must be an array`);
+      else if (e.statsHistory.length > 120)
+        fail(`${where}: "statsHistory" capped at 120 points`);
+    }
+    if (e?.releases !== undefined && !Array.isArray(e.releases))
+      fail(`${where}: "releases" must be an array`);
+    if (
+      e?.changelog !== undefined &&
+      e.changelog !== null &&
+      typeof e.changelog !== "object"
+    ) {
+      fail(`${where}: "changelog" must be an object or null`);
+    }
+    if (e?.activity !== undefined && !Array.isArray(e.activity))
+      fail(`${where}: "activity" must be an array`);
     if (typeof e?.slug === "string") {
-      if (e.slug !== file.replace(/\.json$/, "")) fail(`${where}: filename must match slug "${e.slug}"`);
+      if (e.slug !== file.replace(/\.json$/, ""))
+        fail(`${where}: filename must match slug "${e.slug}"`);
       if (slugs.has(e.slug)) fail(`${where}: duplicate slug "${e.slug}"`);
       slugs.add(e.slug);
     }

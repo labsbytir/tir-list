@@ -12,7 +12,8 @@
     "validate:data": "node scripts/validate-data.mjs",
     "generate:llms": "node scripts/generate-llms.mjs",
     "sync:bosbase": "node scripts/sync-bosbase.mjs",
-    "collect": "node collector/collect.mjs"
+    "collect": "node collector/collect.mjs",
+    "collect:enrich": "node collector/enrich.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.8",

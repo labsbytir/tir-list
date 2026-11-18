@@ -1,0 +1,137 @@
+---
+import Site from "../../layouts/Site.astro";
+import ActivityHeatmap from "../../components/ActivityHeatmap.astro";
+import { StarsHistory, ViewsHistory } from "../../components/RepoCharts.tsx";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const modules = import.meta.glob("../../../catalog/*/*.json", { eager: true }) as Record<
+    string,
+    { default: Record<string, unknown> }
+  >;
+  return Object.entries(modules).map(([path, mod]) => {
+    const [category, file] = path.split("/").slice(-2);
+    return {
+      params: { category, slug: file.replace(/\.json$/, "") },
+      props: { entry: mod.default, category },
+    };
+  });
+}
+
+const labels: Record<string, string> = {
+  skills: "Skills",
+  models: "Models",
+  containers: "Containers",
+  servers: "Servers",
+  agents: "Agents",
+  tools: "Tools",
+};
+
+const { entry, category } = Astro.props as { entry: any; category: string };
+const label = labels[category] || category;
+const s = entry.stats || {};
+const hasGraphs =
+  (entry.statsHistory?.length || 0) > 1 ||
+  (entry.views?.weeks?.length || 0) > 0 ||
+  (entry.activity?.length || 0) > 0;
+---
+
+<Site
+  title={`${entry.name} — tir-list ${label}`}
+  description={`${entry.name}: ${entry.description}`}
+  categories={Object.entries(labels).map(([id, label]) => ({ id, label }))}
+>
+  <div class="hero">
+    <p class="crumbs"><a href="/">Catalog</a> / {label} / {entry.slug}</p>
+    <h1>{entry.name}</h1>
+    {entry.repo ? <p>by {entry.repo.split("/")[0]}</p> : <p>{label}</p>}
+  </div>
+
+  <div class="stat-row">
+    {s.stars !== undefined ? <span>★ <strong>{s.stars.toLocaleString()}</strong> stars</span> : null}
+    {s.forks !== undefined ? <span><strong>{s.forks.toLocaleString()}</strong> forks</span> : null}
+    {s.license ? <span>{s.license}</span> : null}
+    {entry.releases?.length ? <span>{entry.releases.length} releases tracked</span> : null}
+  </div>
+
+  <div class="link-row">
+    <a href={entry.url}>Visit →</a>
+    {entry.links?.website && entry.links.website !== entry.url ? <a href={entry.links.website}>Website</a> : null}
+    {entry.links?.docs ? <a href={entry.links.docs}>Docs</a> : null}
+    {entry.links?.github ? <a href={entry.links.github}>GitHub</a> : null}
+    <a href={`/llms/${category}-${entry.slug}.txt`}>llms.txt</a>
+  </div>
+
+  <div class="layout">
+    <div>
+      <section class="block">
+        <h2>About</h2>
+        <p style="color:var(--muted);line-height:1.6">{entry.description}</p>
+        <p style="font-size:0.8rem;color:var(--malachite)">{(entry.tags || []).map((t) => `#${t}`).join(" ")}</p>
+      </section>
+
+      {hasGraphs ? (
+        <section class="block">
+          <h2>Activity</h2>
+          {(entry.statsHistory?.length || 0) > 1 ? (
+            <>
+              <h3 style="font-size:0.85rem;color:var(--muted)">Stars over time</h3>
+              <StarsHistory client:load data={entry.statsHistory} />
+            </>
+          ) : null}
+          {(entry.views?.weeks?.length || 0) > 0 ? (
+            <>
+              <h3 style="font-size:0.85rem;color:var(--muted)">Views per week</h3>
+              <ViewsHistory client:load data={entry.views.weeks} />
+            </>
+          ) : null}
+          {entry.activity?.length ? <ActivityHeatmap activity={entry.activity} /> : null}
+        </section>
+      ) : null}
+
+      {entry.releases?.length ? (
+        <section class="block">
+          <h2>Releases</h2>
+          {entry.releases.slice(0, 5).map((r) => (
+            <div class="release">
+              <h3><a href={r.url}>{r.name}</a></h3>
+              {r.publishedAt ? <time>{r.publishedAt.slice(0, 10)}</time> : null}
+              {r.notes ? <p>{r.notes.slice(0, 300)}</p> : null}
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {entry.changelog ? (
+        <section class="block">
+          <h2>Changelog</h2>
+          <p style="font-size:0.8rem;color:var(--muted)">
+            From <a href={entry.changelog.url}>{entry.changelog.source}</a>
+          </p>
+          <pre class="code changelog">{entry.changelog.excerpt}</pre>
+        </section>
+      ) : null}
+    </div>
+    <aside>
+      <div class="side-card">
+        <header>Details</header>
+        <div class="body">
+          <p style="margin:0 0 0.5rem">Category: {label}</p>
+          {entry.repo ? <p style="margin:0 0 0.5rem">Repo: <a href={`https://github.com/${entry.repo}`}>{entry.repo}</a></p> : null}
+          {s.pushedAt ? <p style="margin:0 0 0.5rem;color:var(--muted)">Pushed: {s.pushedAt.slice(0, 10)}</p> : null}
+          {s.fetchedAt ? <p style="margin:0;color:var(--muted)">Stats fetched: {s.fetchedAt.slice(0, 10)}</p> : null}
+        </div>
+      </div>
+      <div class="side-card">
+        <header>Contribute</header>
+        <div class="body">
+          <p style="margin:0;color:var(--muted);font-size:0.8rem">
+            Stats refresh on each <code>npm run collect:enrich</code>. Entries are files under
+            <code> catalog/{category}/{entry.slug}.json</code> — open a PR to edit.
+          </p>
+        </div>
+      </div>
+    </aside>
+  </div>
+</Site>

@@ -33,6 +33,8 @@ Add a tool to the catalog by forking and opening a pull request.
 5. Validate: `npm run validate:data`.
 6. Commit, push, and open a PR against `main`. CI runs the same validation.
 
+Maintainers refresh GitHub stats with `npm run collect:enrich` (needs `WEBSHARE_PROXY`, optional `GITHUB_TOKEN`); it fills `stats`, `releases`, `changelog`, and `activity` on repo-backed entries.
+
 ## Rules
 
 - One entry per PR keeps review fast.
