@@ -194,6 +194,40 @@ export function parseOpenRouterApps(html, limit) {
   return out;
 }
 
+export function parsePunkpeyeAwesome(markdown, limit) {
+  const out = [];
+  const seen = new Set();
+  let section = "";
+  for (const line of markdown.split("\n")) {
+    const h = line.match(/^###\s+(.+)$/);
+    if (h) {
+      section = slugify(h[1].replace(/<[^>]+>/g, ""));
+      continue;
+    }
+    const m = line.match(/^\s*-\s*\[([^\]]+)\]\((https?:\/\/[^)]+)\)(.*)$/);
+    if (!m) continue;
+    const slug = slugify(m[1]);
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    let rest = m[3] || "";
+    rest = rest.replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, "");
+    rest = rest.replace(
+      /^\s*[\p{Emoji}\p{So}\u2600-\u27BF\uFE0F\s🎖🐍📇🏎🦀#☕🌊💎☁🏠📟🍎🪟🐧]*/u,
+      ""
+    );
+    rest = rest.replace(/^[–—-]\s*/, "").trim();
+    out.push({
+      slug,
+      name: m[1].trim(),
+      description: rest,
+      url: m[2].trim(),
+      section,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 async function collectSource(src) {
   const orHeaders = process.env.OPENROUTER_API_KEY
     ? { authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` }
@@ -238,6 +272,13 @@ async function collectSource(src) {
       ...e,
       tags: [src.category],
     }));
+  }
+  if (src.type === "awesome-punkpeye") {
+    const md = await fetchText(src.url, `awesome-${slugify(src.url)}`);
+    return parsePunkpeyeAwesome(md, src.limit).map((e) => {
+      const { section, ...rest } = e;
+      return { ...rest, tags: [src.category, ...(section ? [section] : [])] };
+    });
   }
   throw new Error(`unknown source type: ${src.type}`);
 }

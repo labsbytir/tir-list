@@ -37,10 +37,10 @@
       "limit": 30
     },
     {
-      "type": "awesome-list",
+      "type": "awesome-punkpeye",
       "url": "https://raw.githubusercontent.com/punkpeye/awesome-mcp-servers/main/README.md",
       "category": "servers",
-      "limit": 30
+      "limit": 60
     },
     {
       "type": "openrouter-models",
