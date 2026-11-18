@@ -1,5 +1,6 @@
 ---
 import CatalogGrid from "../components/CatalogGrid.astro";
+import CategoryChart from "../components/CategoryChart.tsx";
 import skills from "../data/skills.json";
 import mcpServers from "../data/mcp-servers.json";
 import aiModels from "../data/ai-models.json";
@@ -44,6 +45,10 @@ const categories = [
         {categories.map((c) => <button data-cat={c.id}>{c.label}</button>)}
       </div>
     </div>
+    <CategoryChart
+      client:load
+      data={categories.map((c) => ({ label: c.label, count: c.items.length }))}
+    />
     <main class="grid" id="grid">
       <CatalogGrid categories={categories} server:defer>
         <p slot="fallback">Loading catalog…</p>
