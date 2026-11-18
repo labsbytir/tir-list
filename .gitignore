@@ -1,6 +1,7 @@
 
 node_modules/
 .astro/
+.wrangler/
 .opencode/index/
 .codebase-index/
 .opencode-mem/

@@ -1,14 +1,17 @@
 ---
-import skills from '../data/skills.json';
-import mcpServers from '../data/mcp-servers.json';
-import aiModels from '../data/ai-models.json';
-import linuxFlavors from '../data/linux-flavors.json';
+import CatalogGrid from "../components/CatalogGrid.astro";
+import skills from "../data/skills.json";
+import mcpServers from "../data/mcp-servers.json";
+import aiModels from "../data/ai-models.json";
+import linuxFlavors from "../data/linux-flavors.json";
+
+export const prerender = true;
 
 const categories = [
-  { id: 'skills', label: 'Skills', items: skills },
-  { id: 'mcp-servers', label: 'MCP Servers', items: mcpServers },
-  { id: 'ai-models', label: 'AI Models', items: aiModels },
-  { id: 'linux-flavors', label: 'Linux Flavors', items: linuxFlavors },
+  { id: "skills", label: "Skills", items: skills },
+  { id: "mcp-servers", label: "MCP Servers", items: mcpServers },
+  { id: "ai-models", label: "AI Models", items: aiModels },
+  { id: "linux-flavors", label: "Linux Flavors", items: linuxFlavors },
 ];
 ---
 <!doctype html>
@@ -42,32 +45,26 @@ const categories = [
       </div>
     </div>
     <main class="grid" id="grid">
-      {categories.flatMap((c) =>
-        c.items.map((item) => (
-          <article class="card" data-cat={c.id} data-search={`${item.name} ${item.description} ${item.tags.join(' ')}`.toLowerCase()}>
-            <h3><a href={item.url}>{item.name}</a></h3>
-            <p>{item.description}</p>
-            <p>{item.tags.map((t) => <span class="tag">#{t}</span>)}</p>
-          </article>
-        ))
-      )}
+      <CatalogGrid categories={categories} server:defer>
+        <p slot="fallback">Loading catalog…</p>
+      </CatalogGrid>
     </main>
     <script>
-      const q = document.getElementById('q');
-      const tabs = document.getElementById('tabs');
-      const grid = document.getElementById('grid');
-      let cat = 'all';
+      const q = document.getElementById("q");
+      const tabs = document.getElementById("tabs");
+      const grid = document.getElementById("grid");
+      let cat = "all";
       function apply() {
-        const needle = (q.value || '').toLowerCase();
+        const needle = (q.value || "").toLowerCase();
         for (const el of grid.children) {
-          const okCat = cat === 'all' || el.dataset.cat === cat;
-          const okQ = !needle || (el.dataset.search || '').includes(needle);
-          el.style.display = okCat && okQ ? '' : 'none';
+          const okCat = cat === "all" || el.dataset.cat === cat;
+          const okQ = !needle || (el.dataset.search || "").includes(needle);
+          el.style.display = okCat && okQ ? "" : "none";
         }
       }
-      q.addEventListener('input', apply);
-      tabs.addEventListener('click', (e) => {
-        const b = e.target.closest('button');
+      q.addEventListener("input", apply);
+      tabs.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
         if (!b) return;
         cat = b.dataset.cat;
         apply();

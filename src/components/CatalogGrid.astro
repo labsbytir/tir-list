@@ -1,0 +1,39 @@
+---
+interface Entry {
+  slug: string;
+  name: string;
+  description: string;
+  url: string;
+  tags: string[];
+}
+
+interface Category {
+  id: string;
+  label: string;
+  items: Entry[];
+}
+
+const { categories } = Astro.props as { categories: Category[] };
+---
+
+{
+  categories.flatMap((c) =>
+    c.items.map((item) => (
+      <article
+        class="card"
+        data-cat={c.id}
+        data-search={`${item.name} ${item.description} ${item.tags.join(" ")}`.toLowerCase()}
+      >
+        <h3>
+          <a href={item.url}>{item.name}</a>
+        </h3>
+        <p>{item.description}</p>
+        <p>
+          {item.tags.map((t) => (
+            <span class="tag">#{t}</span>
+          ))}
+        </p>
+      </article>
+    )),
+  )
+}
