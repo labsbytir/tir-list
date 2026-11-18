@@ -69,7 +69,13 @@ if (category === "servers") {
   description={`${entry.name}: ${entry.description}`}
   categories={Object.entries(labels).map(([id, label]) => ({ id, label }))}
 >
-  <p class="crumbs"><a href="/">Catalog</a> / {label} / {entry.slug}</p>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Catalog</a>
+    <span aria-hidden="true">/</span>
+    <a href={`/#${category}`}>{label}</a>
+    <span aria-hidden="true">/</span>
+    <span>{entry.name}</span>
+  </nav>
   <Listing
     client:load
     name={entry.name}

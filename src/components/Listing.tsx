@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import { theme } from "./theme";
+import StackMark from "./StackMark";
 import {
   Box,
   Button,
@@ -161,7 +162,12 @@ export default function Listing(props: ListingProps) {
               <Typography variant="overline">Built with</Typography>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 {props.builtWith.map((b) => (
-                  <Chip key={b.kind + b.name} label={`${b.kind}: ${b.name}`} variant="outlined" />
+                  <Chip
+                    key={b.kind + b.name}
+                    icon={<StackMark name={b.name} />}
+                    label={b.name}
+                    variant="outlined"
+                  />
                 ))}
               </Stack>
             </Box>

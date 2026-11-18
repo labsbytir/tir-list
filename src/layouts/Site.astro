@@ -35,6 +35,7 @@ const repo = "https://github.com/labsbytir/tir-list";
         --muted: #8fb8a0;
       }
       * { box-sizing: border-box; }
+      html { font-size: 112.5%; }
       body {
         font-family: system-ui, sans-serif;
         margin: 0;
@@ -89,8 +90,9 @@ const repo = "https://github.com/labsbytir/tir-list";
       .hero { padding: 2rem 0 1rem; }
       .hero h1 { font-family: ui-monospace, monospace; margin: 0 0 0.25rem; color: var(--malachite); }
       .hero p { margin: 0; color: var(--muted); }
-      .crumbs { font-size: 0.75rem; color: var(--muted); margin-bottom: 1rem; }
-      .crumbs a { color: var(--muted); }
+      .crumbs { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; font-size: 1rem; color: var(--muted); margin-bottom: 1.25rem; }
+      .crumbs a { color: var(--mist); text-decoration: none; border-bottom: 1px solid var(--black-forest); }
+      .crumbs a:hover { color: var(--malachite); }
       .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1.25rem 0; align-items: center; }
       .controls input {
         flex: 1;
