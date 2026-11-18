@@ -9,6 +9,7 @@ import {
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ProxyAgent, fetch as undiciFetch } from "undici";
+import { restoreCuratedFields } from "../src/lib/listing-contract.ts";
 
 const UA = "tir-list-collector/0.1 (+https://github.com/labsbytir/tir-list)";
 const DELAY_MS = 1000;
@@ -403,6 +404,13 @@ async function main() {
   let updated = 0;
   for (const { entry, file } of items) {
     const repo = parseRepoUrl(entry.links?.github || entry.url);
+    const curated = {
+      ...(entry.details !== undefined ? { details: entry.details } : {}),
+      ...(entry.categoryDetails !== undefined
+        ? { categoryDetails: entry.categoryDetails }
+        : {}),
+      ...(entry.evidence !== undefined ? { evidence: entry.evidence } : {}),
+    };
     entry.repo = repo;
     try {
       const data = await enrichRepo(repo, `enrich-${entry.slug}`);
@@ -433,7 +441,8 @@ async function main() {
       if (hist[hist.length - 1]?.date !== today)
         hist.push({ date: today, stars: data.stats.stars });
       entry.statsHistory = hist.slice(-120);
-      writeFileSync(file, JSON.stringify(entry, null, 2) + "\n");
+      const preserved = restoreCuratedFields(entry, curated);
+      writeFileSync(file, JSON.stringify(preserved, null, 2) + "\n");
       updated++;
     } catch (err) {
       console.error(`enrich failed, continuing: ${repo} (${err.message})`);
