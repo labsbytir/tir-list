@@ -95,11 +95,12 @@ export function parseGithubTopic(json, limit) {
     const links = { github: r.html_url };
     if (r.homepage) links.website = r.homepage;
     return {
-      slug: slugify(r.name),
+      slug: slugify(r.full_name || r.name),
       name: r.name,
       description: (r.description || "").trim(),
       url: r.homepage || r.html_url,
       links,
+      topics: Array.isArray(r.topics) ? r.topics.slice(0, 8) : [],
     };
   });
 }
@@ -214,6 +215,18 @@ export function parseAppRankings(html, limit) {
 }
 
 export function parsePunkpeyeAwesome(markdown, limit) {
+  const LANG = {
+    "🐍": "python",
+    "📇": "typescript",
+    "🏎️": "go",
+    "🦀": "rust",
+    "#️⃣": "csharp",
+    "☕": "java",
+    "🌊": "cpp",
+    "💎": "ruby",
+  };
+  const SCOPE = { "☁️": "cloud", "🏠": "local", "📟": "embedded" };
+  const OS = { "🍎": "macos", "🪟": "windows", "🐧": "linux" };
   const out = [];
   const seen = new Set();
   let section = "";
@@ -230,8 +243,13 @@ export function parsePunkpeyeAwesome(markdown, limit) {
     seen.add(slug);
     let rest = m[3] || "";
     rest = rest.replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, "");
+    const extraTags = new Set();
+    for (const [emoji, tag] of Object.entries({ ...LANG, ...SCOPE, ...OS })) {
+      if (rest.includes(emoji)) extraTags.add(tag);
+    }
+    if (rest.includes("🎖")) extraTags.add("official");
     rest = rest.replace(
-      /^\s*[\p{Emoji}\p{So}\u2600-\u27BF\uFE0F\s🎖🐍📇🏎🦀#☕🌊💎☁🏠📟🍎🪟🐧]*/u,
+      /^[\s\p{Emoji}\p{So}\u2600-\u27BF\uFE0F🎖🐍📇🏎🦀#☕🌊💎☁🏠📟🍎🪟🐧]*/u,
       ""
     );
     rest = rest.replace(/^[–—-]\s*/, "").trim();
@@ -241,6 +259,7 @@ export function parsePunkpeyeAwesome(markdown, limit) {
       description: rest,
       url: m[2].trim(),
       section,
+      extraTags: [...extraTags],
     });
     if (out.length >= limit) break;
   }
@@ -280,10 +299,19 @@ async function collectSource(src) {
       `https://api.github.com/search/repositories?q=topic:${encodeURIComponent(src.topic)}` +
       `&sort=stars&order=desc&per_page=${src.limit}`;
     const data = JSON.parse(await fetchText(url, `topic-${src.topic}`));
-    return parseGithubTopic(data, src.limit).map((e) => ({
-      ...e,
-      tags: [src.category],
-    }));
+    return parseGithubTopic(data, src.limit).map((e) => {
+      const { topics, ...rest } = e;
+      return {
+        ...rest,
+        tags: [
+          src.category,
+          ...(topics || [])
+            .map((t) => slugify(t))
+            .filter(Boolean)
+            .slice(0, 5),
+        ],
+      };
+    });
   }
   if (src.type === "awesome-list") {
     const md = await fetchText(src.url, `awesome-${slugify(src.url)}`);
@@ -295,8 +323,15 @@ async function collectSource(src) {
   if (src.type === "awesome-punkpeye") {
     const md = await fetchText(src.url, `awesome-${slugify(src.url)}`);
     return parsePunkpeyeAwesome(md, src.limit).map((e) => {
-      const { section, ...rest } = e;
-      return { ...rest, tags: [src.category, ...(section ? [section] : [])] };
+      const { section, extraTags, ...rest } = e;
+      return {
+        ...rest,
+        tags: [
+          src.category,
+          ...(section ? [section] : []),
+          ...(extraTags || []),
+        ],
+      };
     });
   }
   throw new Error(`unknown source type: ${src.type}`);
@@ -306,10 +341,60 @@ const { default: config } = await import("./sources.json", {
   with: { type: "json" },
 });
 
+export function normUrl(u) {
+  try {
+    const x = new URL(String(u || "").trim());
+    return (
+      x.hostname.replace(/^www\./, "").toLowerCase() +
+      x.pathname.replace(/\/+$/, "")
+    ).toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function entryUrls(e) {
+  const urls = [e.url, ...(e.links ? Object.values(e.links) : [])];
+  // GitHub repo pages and homepages count as the same listing.
+  return urls
+    .map((u) => {
+      const n = normUrl(u);
+      const m = n.match(/^github\.com\/([^/]+\/[^/]+)/);
+      return m ? m[1] : n;
+    })
+    .filter(Boolean);
+}
+
 async function main() {
   let planned = 0,
     written = 0,
-    skipped = 0;
+    skipped = 0,
+    dupes = 0;
+  const known = new Set();
+  try {
+    const { readdirSync, readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const root = new URL("../catalog/", import.meta.url);
+    for (const category of readdirSync(root)) {
+      for (const file of readdirSync(join(root.pathname, category)).filter(
+        (f) => f.endsWith(".json")
+      )) {
+        try {
+          for (const u of entryUrls(
+            JSON.parse(
+              readFileSync(join(root.pathname, category, file), "utf8")
+            )
+          )) {
+            known.add(u);
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+  } catch {
+    /* empty catalog */
+  }
   for (const src of config.sources) {
     let entries;
     try {
@@ -329,6 +414,11 @@ async function main() {
     }
     for (const e of entries) {
       if (!e.description) continue;
+      const keys = entryUrls(e);
+      if (keys.some((k) => known.has(k))) {
+        dupes++;
+        continue;
+      }
       const dir = new URL(`../catalog/${src.category}/`, import.meta.url);
       mkdirSync(dir, { recursive: true });
       const file = new URL(
@@ -340,6 +430,7 @@ async function main() {
         continue;
       }
       writeFileSync(file, JSON.stringify(e, null, 2) + "\n");
+      for (const k of entryUrls(e)) known.add(k);
       written++;
     }
     await sleep(DELAY_MS);
@@ -348,7 +439,7 @@ async function main() {
   console.log(
     DRY_RUN
       ? `dry run: ${planned} sources planned`
-      : `done: ${written} written, ${skipped} skipped`
+      : `done: ${written} written, ${skipped} skipped, ${dupes} duplicate URLs skipped`
   );
   if (!DRY_RUN)
     execFileSync("npm", ["run", "validate:data"], { stdio: "inherit" });

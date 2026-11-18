@@ -39,6 +39,11 @@ for (const category of readdirSync(root).sort()) {
     }
     if (typeof e?.url === "string" && !/^https?:\/\//.test(e.url))
       fail(`${where}: "url" must start with http(s)`);
+    if (
+      e?.icon !== undefined &&
+      (typeof e.icon !== "string" || !/^https?:\/\//.test(e.icon))
+    )
+      fail(`${where}: "icon" must be an http(s) URL`);
     if (e?.install !== undefined) {
       if (
         typeof e.install !== "object" ||

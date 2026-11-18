@@ -1,4 +1,6 @@
 ---
+import EntryIcon from "./EntryIcon.astro";
+
 interface Entry {
   slug: string;
   name: string;
@@ -29,7 +31,9 @@ const { categories } = Astro.props as { categories: Category[] };
         data-updated={(item.stats?.pushedAt || item.stats?.fetchedAt || "") as string}
       >
         <h3 class="card-title">
-          <a href={`/${c.id}/${item.slug}`}>{item.name}</a>
+          <a href={`/${c.id}/${item.slug}`} style="display:inline-flex;align-items:center;gap:0.5rem">
+            <EntryIcon url={item.url} name={item.name} size={22} />{item.name}
+          </a>
         </h3>
         <p class="card-tags">{item.tags.map((t) => `#${t}`).join(" ")}</p>
         <p class="card-desc">{item.description}</p>

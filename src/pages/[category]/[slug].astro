@@ -2,6 +2,7 @@
 import Site from "../../layouts/Site.astro";
 import ActivityHeatmap from "../../components/ActivityHeatmap.astro";
 import Discussion from "../../components/Comments.tsx";
+import EntryIcon from "../../components/EntryIcon.astro";
 import { StarsHistory, UsageHistory, ViewsHistory } from "../../components/RepoCharts.tsx";
 import { categories, labels } from "../../lib/catalog";
 
@@ -32,7 +33,9 @@ const hasGraphs =
 >
   <div class="hero">
     <p class="crumbs"><a href="/">Catalog</a> / {label} / {entry.slug}</p>
-    <h1>{entry.name}</h1>
+    <h1 style="display:flex;align-items:center;gap:0.75rem">
+      <EntryIcon url={entry.url} name={entry.name} size={40} />{entry.name}
+    </h1>
     {entry.repo ? <p>by {entry.repo.split("/")[0]}</p> : <p>{label}</p>}
   </div>
 
@@ -107,29 +110,41 @@ const hasGraphs =
         </section>
       ) : null}
 
-      {entry.specs && (entry.specs.contextLength || entry.specs.modalities || entry.specs.releasedAt) ? (
-        <section class="block">
-          <h2>FAQ</h2>
-          {entry.specs.contextLength ? (
-            <details class="release">
-              <summary>What is the context length of {entry.name}?</summary>
-              <p>{Number(entry.specs.contextLength).toLocaleString()} tokens.</p>
-            </details>
-          ) : null}
-          {entry.specs.modalities ? (
-            <details class="release">
-              <summary>What inputs and outputs does {entry.name} support?</summary>
-              <p>{entry.specs.modalities}</p>
-            </details>
-          ) : null}
-          {entry.specs.releasedAt ? (
-            <details class="release">
-              <summary>When was {entry.name} released?</summary>
-              <p>{entry.specs.releasedAt}{entry.specs.knowledgeCutoff ? ` (knowledge cutoff ${entry.specs.knowledgeCutoff})` : ""}.</p>
-            </details>
-          ) : null}
-        </section>
-      ) : null}
+      <section class="block">
+        <h2>FAQ</h2>
+        <details class="release">
+          <summary>What is {entry.name}?</summary>
+          <p>{entry.description}</p>
+        </details>
+        <details class="release">
+          <summary>Where is the homepage of {entry.name}?</summary>
+          <p><a href={entry.url}>{entry.url}</a></p>
+        </details>
+        {entry.repo ? (
+          <details class="release">
+            <summary>Who maintains {entry.name}?</summary>
+            <p><a href={`https://github.com/${entry.repo.split("/")[0]}`}>{entry.repo.split("/")[0]}</a> on GitHub{s.license ? ` — licensed ${s.license}` : ""}.</p>
+          </details>
+        ) : null}
+        {entry.specs?.contextLength ? (
+          <details class="release">
+            <summary>What is the context length?</summary>
+            <p>{Number(entry.specs.contextLength).toLocaleString()} tokens.</p>
+          </details>
+        ) : null}
+        {entry.specs?.modalities ? (
+          <details class="release">
+            <summary>What inputs and outputs are supported?</summary>
+            <p>{entry.specs.modalities}</p>
+          </details>
+        ) : null}
+        {entry.specs?.releasedAt ? (
+          <details class="release">
+            <summary>When was it released?</summary>
+            <p>{entry.specs.releasedAt}{entry.specs.knowledgeCutoff ? ` (knowledge cutoff ${entry.specs.knowledgeCutoff})` : ""}.</p>
+          </details>
+        ) : null}
+      </section>
 
       {(() => {
         const vendor = (entry.permaslug || "").split("/")[0];
