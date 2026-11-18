@@ -77,6 +77,7 @@ function ReportBox({ page }: { page: string }) {
 export default function Discussion({ page }: { page: string }) {
   return (
     <>
+      <div className="comment-box">
       <Comments
         page={page}
         apiUrl="/api/comments"
@@ -87,6 +88,8 @@ export default function Discussion({ page }: { page: string }) {
           },
         }}
       />
+      </div>
+      <style>{`.comment-box button{font-size:0.85rem;padding:0.4rem 0.8rem;max-width:100%;}`}</style>
       <p
         style={{
           fontSize: "0.75rem",
@@ -94,7 +97,7 @@ export default function Discussion({ page }: { page: string }) {
           marginTop: "0.5rem",
         }}
       >
-        No account needed — max 500 characters, posts with links are held for
+        Sign in to comment. Max 500 characters. Posts with links are held for
         review.
       </p>
       <ReportBox page={page} />
