@@ -1,43 +1,24 @@
-import {
-  _React,
-  Nextjs,
-  _Astro,
-  Python,
-  Go,
-  Rust,
-  Typescript,
-  Javascript,
-  Postgresql,
-  Sqlite,
-  Redis,
-  Nginx,
-  Django,
-  Fastapi,
-  Elasticsearch,
-  Nodejs,
-} from "@dev.icons/react";
-
-const marks: Record<string, typeof Python> = {
-  React: _React,
-  "Next.js": Nextjs,
-  Astro: _Astro,
-  Python,
-  Go,
-  Rust,
-  TypeScript: Typescript,
-  JavaScript: Javascript,
-  Postgres: Postgresql,
-  SQLite: Sqlite,
-  Redis,
-  nginx: Nginx,
-  Django,
-  FastAPI: Fastapi,
-  Elasticsearch,
-  "Node.js": Nodejs,
+const files: Record<string, string> = {
+  React: "reactjs",
+  "Next.js": "nextjs",
+  Astro: "astro",
+  Python: "python",
+  Go: "go",
+  Rust: "rust-light",
+  TypeScript: "typescript",
+  JavaScript: "javascript",
+  Postgres: "postgresql",
+  Redis: "redis",
+  Django: "django",
+  FastAPI: "fast-api",
+  Elasticsearch: "elastic",
+  "Node.js": "nodejs",
 };
 
+const base = "https://cdn.jsdelivr.net/gh/xandemon/developer-icons@7.1.0/icons/";
+
 export default function StackMark({ name }: { name: string }) {
-  const Mark = marks[name];
-  if (!Mark) return null;
-  return <Mark size={22} alt={name} />;
+  const file = files[name];
+  if (!file) return null;
+  return <img src={`${base}${file}.svg`} alt="" width={22} height={22} />;
 }
