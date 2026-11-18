@@ -487,7 +487,7 @@ async function main() {
             if (!cur.stats[k] && e.stats && e.stats[k]) { cur.stats[k] = e.stats[k]; changed = true; }
           }
           if (!cur.weeklyInstalls && e.weeklyInstalls) { cur.weeklyInstalls = e.weeklyInstalls; changed = true; }
-          if (changed) { writeFileSync(hit, JSON.stringify(cur, null, 2) + chr(10)); merged++; }
+          if (changed) { writeFileSync(hit, JSON.stringify(cur, null, 2) + '\n'); merged++; }
         } catch {
           continue;
         }
@@ -504,7 +504,7 @@ async function main() {
         continue;
       }
       writeFileSync(file, JSON.stringify(e, null, 2) + "\n");
-      for (const k of entry672Urls(e)) known.set(k, 'NEW');
+      for (const k of entryUrls(e)) known.set(k, 'NEW');
       written++;
     }
     await sleep(DELAY_MS);
@@ -524,6 +524,4 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   await main();
-}
-
 }
