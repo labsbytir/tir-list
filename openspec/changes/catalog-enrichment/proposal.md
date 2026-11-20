@@ -1,7 +1,7 @@
 # Proposal
 
 ## Why
-Scraped entries lack identity (no icons), carry no language/tech tags, duplicate across sources, and only model pages have FAQs.
+Collected entries lack identity (no icons), carry no language/tech tags, duplicate across sources, and only model pages have FAQs.
 
 ## What Changes
 - URL-keyed cross-source dedupe in collect (GitHub repo == homepage)

@@ -1,6 +1,6 @@
 # Collector
 
-tir-list's custom headless scraper. It fetches listing sources through the
+tir-list's custom headless collector. It fetches listing sources through the
 Webshare proxy (every request exits via the proxy with a fresh per-link
 session), parses them into catalog entries, and writes `catalog/<category>/<slug>.json`.
 

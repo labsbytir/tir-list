@@ -25,7 +25,7 @@ function proxyUrlFor(session) {
   if (!raw) {
     if (DIRECT) return null;
     console.error(
-      "WEBSHARE_PROXY not set. Refusing to scrape (pass --direct to override)."
+      "WEBSHARE_PROXY not set. Refusing to collect (pass --direct to override)."
     );
     process.exit(1);
   }
@@ -433,7 +433,7 @@ async function main() {
             entry.sources = { ...(entry.sources || {}), website: site };
           }
         } catch (err) {
-          console.error(`site scrape skipped: ${site} (${err.message})`);
+          console.error(`site collect skipped: ${site} (${err.message})`);
         }
       }
       const today = new Date().toISOString().slice(0, 10);

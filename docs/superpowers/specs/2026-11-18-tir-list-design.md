@@ -15,7 +15,7 @@ User wants a static catalog site like https://www.opensourcealternatives.to/ —
 ## Non-goals
 
 - No auth, no backend, no DB, no comments/ratings.
-- No scraping/import pipeline yet.
+- No collecting/import pipeline yet.
 - No framework migration (Next/Nuxt), no monorepo tooling.
 
 ## Anti-goals

@@ -1,7 +1,7 @@
 # Proposal
 
 ## Why
-Scraped entries carry a single URL; we also want website/docs/GitHub links. And every catalog page should ship an LLM-readable file (`llms.txt` convention — `llms.md` isn't the standard filename).
+Collected entries carry a single URL; we also want website/docs/GitHub links. And every catalog page should ship an LLM-readable file (`llms.txt` convention — `llms.md` isn't the standard filename).
 
 ## What Changes
 - Optional `links: { website?, docs?, github? }` on entries: validator, templates, collector (GitHub topic `homepage` → website, `html_url` → github), sync script, CONTRIBUTING, card footer renders GitHub/Docs links
