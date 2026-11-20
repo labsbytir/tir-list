@@ -8,4 +8,4 @@
 
 ## Alternatives
 - Unified `/benchmarks` endpoint in enrich: rejected for now (models API already embeds AA + design-arena; saves rate budget).
-- Scraping /models HTML: rejected, JSON API is complete.
+- Collecting /models HTML: rejected, JSON API is complete.

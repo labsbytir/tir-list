@@ -1,7 +1,7 @@
 # Proposal
 
 ## Why
-Catalog is hand-edited; user wants `collector/`, a custom scraper seeding entries from GitHub topics and awesome-lists, JSON templates per listing type, all traffic through Webshare proxy with a fresh session per link (analytics), writing directly to `catalog/`.
+Catalog is hand-edited; user wants `collector/`, a custom collector seeding entries from GitHub topics and awesome-lists, JSON templates per listing type, all traffic through Webshare proxy with a fresh session per link (analytics), writing directly to `catalog/`.
 
 ## What Changes
 - `collector/collect.mjs` (`npm run collect`): source defs → proxy fetch → parse → write `catalog/<category>/<slug>.json` → run validation
@@ -12,7 +12,7 @@ Catalog is hand-edited; user wants `collector/`, a custom scraper seeding entrie
 ## Capabilities
 
 ### New Capabilities
-- `collector`: proxy-gated scraper writing catalog entries
+- `collector`: proxy-gated collector writing catalog entries
 
 ### Modified Capabilities
 (none)

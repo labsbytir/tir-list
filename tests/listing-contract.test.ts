@@ -643,7 +643,7 @@ test("merge helper composes with collector fill-missing merge", () => {
     links: { website: "https://example.com/x" },
   };
   const incoming = {
-    description: "Scraped",
+    description: "Collected",
     links: { github: "https://github.com/example/x" },
     stats: { stars: 7 },
   };
